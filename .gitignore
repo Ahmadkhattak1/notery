@@ -1,0 +1,6 @@
+# Firebase service account key (sensitive information)
+backend/config/firebaseServiceAccountKey.json
+
+# Environment variables
+.env
+node_modules
