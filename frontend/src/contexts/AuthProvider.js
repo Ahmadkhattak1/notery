@@ -1,3 +1,4 @@
+// frontend/src/contexts/AuthProvider.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -13,9 +14,10 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Listen for auth state changes
+    console.log("Initializing onAuthStateChanged...");
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser || null);
+      console.log("Auth state changed. Current user:", currentUser);
+      setUser(currentUser || null);  // Update the user state when authentication changes
     });
 
     return () => unsubscribe();
@@ -25,6 +27,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await signOut(auth);
       setUser(null);
+      console.log("User logged out.");
     } catch (error) {
       console.error("Logout error:", error);
     }
