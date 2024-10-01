@@ -1,7 +1,7 @@
-// frontend/src/firebaseConfig.js
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // Import getStorage
 
 // Firebase configuration
 const firebaseConfig = {
@@ -13,7 +13,11 @@ const firebaseConfig = {
     appId: "1:38533750395:web:5a2c7fdca45511fc518cde"
   };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app); // Initialize Firestore
+  const app = initializeApp(firebaseConfig);
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app); // Initialize storage
+  
+  export { auth, db, storage }; // Export storage
+  
