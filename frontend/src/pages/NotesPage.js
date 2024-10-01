@@ -53,40 +53,36 @@ const NotesPage = () => {
 
   // Function to replace images with placeholders in the preview content
   const getPreviewContent = (htmlContent) => {
-    const maxLength = 350;
+    const maxLength = 500;
+  
+    // Sanitize the HTML content to prevent XSS attacks
+    const sanitizedContent = DOMPurify.sanitize(htmlContent);
   
     // Create a temporary DOM element to parse the HTML content
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-  
-    // Flag to check if there are any images
-    let hasImages = false;
+    tempDiv.innerHTML = sanitizedContent;
   
     // Replace images with placeholders
     const images = tempDiv.getElementsByTagName('img');
-    if (images.length > 0) {
-      hasImages = true;
-      for (let img of images) {
-        const placeholderDiv = document.createElement('div');
-        placeholderDiv.className = 'minimized-image-placeholder';
-        placeholderDiv.textContent = '[Image Minimized]';
-        img.parentNode.replaceChild(placeholderDiv, img);
-      }
+    for (let img of images) {
+      const placeholderSpan = document.createElement('span');
+      placeholderSpan.className = 'minimized-image-placeholder';
+      placeholderSpan.textContent = '[Image Minimized]';
+  
+      // Replace the image with the placeholder
+      img.parentNode.replaceChild(placeholderSpan, img);
     }
   
     // Get the inner HTML with formatting preserved
     let contentHTML = tempDiv.innerHTML;
   
-    // Safely truncate the content to maxLength characters
+    // Safely truncate the content to maxLength characters without breaking HTML tags
     contentHTML = truncate(contentHTML, maxLength, { ellipsis: '...' });
-    contentHTML = DOMPurify.sanitize(contentHTML);
-
   
     // Return the content as a React element
     return <div dangerouslySetInnerHTML={{ __html: contentHTML }} />;
-    
   };
-
+  
     
 
   // TipTap editor setup with advanced features
@@ -238,15 +234,46 @@ const NotesPage = () => {
   // Function to handle adding a new note
   const handleAddNote = async () => {
     if (!editor) return;
-
-    if (!editTitle.trim() && !editor.getHTML().trim()) {
-      alert("Title or content can't be empty");
+  
+    // Trim the editTitle to check if it's empty or only whitespace
+    let title = editTitle.trim();
+  
+    if (!title) {
+      // Generate title from content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = editor.getHTML();
+  
+      // Remove images and other non-text elements
+      const images = tempDiv.getElementsByTagName('img');
+      while (images.length > 0) {
+        images[0].parentNode.removeChild(images[0]);
+      }
+  
+      // Get the text content
+      let textContent = tempDiv.textContent || tempDiv.innerText || '';
+      textContent = textContent.trim();
+  
+      // Remove extra spaces and get the first 30 non-space characters
+      if (textContent.length > 0) {
+        // Remove consecutive spaces
+        textContent = textContent.replace(/\s+/g, ' ');
+        // Get the first 30 characters
+        title = textContent.substring(0, 40);
+      } else {
+        // If content is empty, set a default title
+        title = 'Untitled Note';
+      }
+    }
+  
+    // Check if content is empty
+    if (!editor.getHTML().trim()) {
+      alert("Content can't be empty");
       return;
     }
-
+  
     try {
       await addDoc(collection(db, 'notes'), {
-        title: editTitle || '',
+        title: title,
         content: editor.getHTML(),
         folderId: selectedFolder || null,
         userId: user.uid,
@@ -261,26 +288,57 @@ const NotesPage = () => {
       alert('Failed to add the note. Please try again.');
     }
   };
-
+  
   // Function to handle editing an existing note
   const handleEditNote = async () => {
     if (!editor) return;
-
-    if (!editTitle.trim() && !editor.getHTML().trim()) {
-      alert("Title or content can't be empty");
+  
+    // Trim the editTitle to check if it's empty or only whitespace
+    let title = editTitle.trim();
+  
+    if (!title) {
+      // Generate title from content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = editor.getHTML();
+  
+      // Remove images and other non-text elements
+      const images = tempDiv.getElementsByTagName('img');
+      while (images.length > 0) {
+        images[0].parentNode.removeChild(images[0]);
+      }
+  
+      // Get the text content
+      let textContent = tempDiv.textContent || tempDiv.innerText || '';
+      textContent = textContent.trim();
+  
+      // Remove extra spaces and get the first 30 non-space characters
+      if (textContent.length > 0) {
+        // Remove consecutive spaces
+        textContent = textContent.replace(/\s+/g, ' ');
+        // Get the first 30 characters
+        title = textContent.substring(0, 30);
+      } else {
+        // If content is empty, set a default title
+        title = 'Untitled Note';
+      }
+    }
+  
+    // Check if content is empty
+    if (!editor.getHTML().trim()) {
+      alert("Content can't be empty");
       return;
     }
-
+  
     if (initialContent === editor.getHTML()) {
       // No changes were made, just close the modal
       setIsModalOpen(false);
       return;
     }
-
+  
     try {
       const noteRef = doc(db, 'notes', editingNoteId);
       await updateDoc(noteRef, {
-        title: editTitle,
+        title: title,
         content: editor.getHTML(),
         updatedAt: serverTimestamp(),
       });
@@ -293,7 +351,7 @@ const NotesPage = () => {
       alert('Failed to edit the note. Please try again.');
     }
   };
-
+  
   // Function to open the modal for editing a note
   const openEditModal = (note) => {
     setEditingNoteId(note.id);
