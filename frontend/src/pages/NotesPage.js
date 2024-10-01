@@ -27,7 +27,6 @@ import TextAlign from '@tiptap/extension-text-align';
 import Color from '@tiptap/extension-color';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
-import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
 import '../App.css';
 import truncate from 'html-truncate';
 import DOMPurify from 'dompurify';
@@ -143,9 +142,7 @@ const NotesPage = () => {
       // Include TextStyle and Color after custom nodes
       TextStyle, // Required for the Color extension
       Color,
-  
-      FontSize,
-  
+    
       // Lists
       ListItem,
       BulletList,
@@ -756,29 +753,6 @@ const NotesPage = () => {
             Date Stamp
           </button>
 
-          {/* Font Size Dropdown */}
-          <select
-            onChange={(e) => {
-              const fontSize = e.target.value;
-              if (fontSize !== '') {
-                editor.chain().focus().setFontSize(fontSize).run();
-              }
-            }}
-            disabled={!editor}
-            title="Change Font Size"
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Font Size
-            </option>
-            <option value="12px">12px</option>
-            <option value="14px">14px</option>
-            <option value="16px">16px</option>
-            <option value="18px">18px</option>
-            <option value="20px">20px</option>
-            <option value="22px">22px</option>
-            <option value="24px">24px</option>
-          </select>
 
           {/* Heading Colors */}
           

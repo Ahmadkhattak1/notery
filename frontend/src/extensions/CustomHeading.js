@@ -9,18 +9,24 @@ const CustomHeading = Heading.extend({
       ? node.attrs.level
       : this.options.levels[0];
 
-    // Set default colors based on heading level
+    // Set default colors and font sizes based on heading level
     let defaultColor = '';
+    let defaultFontSize = '';
+
     if (level === 1) {
       defaultColor = '#6495ED'; // Blue for H1
+      defaultFontSize = '1.5em'; // Adjust as needed
     } else if (level === 2) {
-      defaultColor = '#FFBF00'; // Orange for H2
+      defaultColor = '#FFC000'; // Orange for H2
+      defaultFontSize = '1.2em'; // Adjust as needed
     }
 
-    // Apply default color if no color style is already set
-    if (!HTMLAttributes.style || !HTMLAttributes.style.includes('color')) {
-      HTMLAttributes.style = `${HTMLAttributes.style || ''}color: ${defaultColor};`;
-    }
+    // Apply default styles if not already set
+    const style = HTMLAttributes.style || '';
+    const hasColor = style.includes('color');
+    const hasFontSize = style.includes('font-size');
+
+    HTMLAttributes.style = `${style}${!hasColor && defaultColor ? `color: ${defaultColor};` : ''}${!hasFontSize && defaultFontSize ? `font-size: ${defaultFontSize};` : ''}`;
 
     return [
       `h${level}`,
