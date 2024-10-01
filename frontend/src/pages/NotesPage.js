@@ -29,6 +29,8 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
 import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
+import '../App.css';
+import Gapcursor from '@tiptap/extension-gapcursor';
 
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
@@ -59,6 +61,7 @@ const NotesPage = () => {
       Italic,
       Highlight,
       BulletList,
+      Gapcursor,
       CodeBlock.configure({
         HTMLAttributes: {
           class: 'code-block',
@@ -73,44 +76,102 @@ const NotesPage = () => {
       FontSize, // Custom font size extension
     ],
     content: '',
-      editorProps: {
+    editorProps: {
       handleKeyDown(view, event) {
+        const editorInstance = this;
+
         if (event.key === 'Tab') {
           event.preventDefault();
-          editor.chain().focus().insertContent('    ').run(); // Insert 4 spaces
+          editorInstance.chain().focus().insertContent('    ').run(); // Insert 4 spaces
           return true;
         }
 
-        if (event.key === 'Backspace') {
-          const { from } = view.state.selection;
-          if (from < 4) return false; // Prevent removing beyond start
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+          // Prevent deleting images with Backspace or Delete keys
+          const { state } = view;
+          const { $from, empty } = state.selection;
 
-          const text = view.state.doc.textBetween(from - 4, from, '\n', '\0');
-          if (text === '    ') {
-            event.preventDefault();
-            editor.chain().focus().deleteRange({ from: from - 4, to: from }).run();
-            return true;
+          if (empty) {
+            const nodeBefore = $from.nodeBefore;
+            const nodeAfter = $from.nodeAfter;
+
+            if (
+              (nodeBefore && nodeBefore.type.name === 'image') ||
+              (nodeAfter && nodeAfter.type.name === 'image')
+            ) {
+              // Prevent deletion
+              event.preventDefault();
+              return true;
+            }
+          } else {
+            const { from, to } = state.selection;
+            let hasImage = false;
+            state.doc.nodesBetween(from, to, (node) => {
+              if (node.type.name === 'image') {
+                hasImage = true;
+              }
+            });
+            if (hasImage) {
+              // Prevent deletion
+              event.preventDefault();
+              return true;
+            }
+          }
+
+          // Existing Backspace logic for deleting indentation spaces
+          if (event.key === 'Backspace') {
+            const { from } = state.selection;
+            if (from < 4) return false; // Prevent removing beyond start
+
+            const text = state.doc.textBetween(from - 4, from, '\n', '\0');
+            if (text === '    ') {
+              event.preventDefault();
+              editorInstance.chain().focus().deleteRange({ from: from - 4, to: from }).run();
+              return true;
+            }
           }
         }
 
         if (event.key === ' ' && !event.shiftKey) {
           const { $from } = view.state.selection;
           const before = view.state.doc.textBetween($from.before(), $from.pos, '\n', '\0');
-          if (before.endsWith('  ')) { // Double space
+          if (before.endsWith('  ')) {
+            // Double space
             event.preventDefault();
-            editor.chain().focus().insertContent('    ').run(); // Indent by 4 spaces
+            editorInstance.chain().focus().insertContent('    ').run(); // Indent by 4 spaces
             return true;
           }
         }
 
         return false;
       },
+
+      handlePaste(view, event) {
+        // Prevent pasting over images
+        const { state } = view;
+        const { selection } = state;
+        const { $from, $to } = selection;
+
+        let hasImage = false;
+        state.doc.nodesBetween($from.pos, $to.pos, (node) => {
+          if (node.type.name === 'image') {
+            hasImage = true;
+          }
+        });
+
+        if (hasImage) {
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
     },
   });
-
-  // Fetch folders and notes from Firestore
+    // Fetch folders and notes from Firestore
   useEffect(() => {
     if (!user) return;
+    
 
     // Fetch folders
     const unsubscribeFolders = onSnapshot(collection(db, 'folders'), (snapshot) => {
@@ -159,6 +220,7 @@ const NotesPage = () => {
       console.error('Error adding note:', error);
       alert('Failed to add the note. Please try again.');
     }
+    
   };
 
   // Function to handle editing an existing note
@@ -198,9 +260,22 @@ const NotesPage = () => {
     setEditingNoteId(note.id);
     setEditTitle(note.title);
     setInitialContent(note.content); // Set the initial content for change detection
-    editor.commands.setContent(note.content); // Load note content into editor
-    setIsModalOpen(true);
-  };
+    editor.commands.setContent(note.content, false); // Load note content into editor without parsing as HTML
+  // Ensure the editor instance is ready
+  if (editor) {
+    editor.commands.setContent(note.content);
+  } else {
+    // If the editor is not yet initialized, wait for it to be ready
+    const interval = setInterval(() => {
+      if (editor) {
+        editor.commands.setContent(note.content);
+        clearInterval(interval);
+      }
+    }, 100);
+  }
+
+  setIsModalOpen(true);
+};
 
   // Function to handle deleting a note
   const handleDeleteNote = async (noteId) => {
@@ -548,7 +623,7 @@ const NotesPage = () => {
               .map((note) => (
                 <li key={note.id}>
                   <h4>{note.title}</h4>
-                  <div dangerouslySetInnerHTML={{ __html: note.content }}></div>
+                  <div className="note-preview" dangerouslySetInnerHTML={{ __html: note.content }}></div>
                   <p><small>Created: {note.createdAt?.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></p>
                   {note.updatedAt && (
                     <p><small>Updated: {note.updatedAt.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></p>
