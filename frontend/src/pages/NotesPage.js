@@ -18,14 +18,12 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthProvider';
 import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
 import Highlight from '@tiptap/extension-highlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import CodeBlock from '@tiptap/extension-code-block';
 import TextAlign from '@tiptap/extension-text-align';
-import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
@@ -33,11 +31,43 @@ import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
 import '../App.css';
 import truncate from 'html-truncate';
 import DOMPurify from 'dompurify';
+import CustomHeading from '../extensions/CustomHeading';
+import CustomParagraph from '../extensions/CustomParagraph';
+import Document from '@tiptap/extension-document';
+import Text from '@tiptap/extension-text';
+import History from '@tiptap/extension-history';
+import HardBreak from '@tiptap/extension-hard-break';
+import ListItem from '@tiptap/extension-list-item';
+import OrderedList from '@tiptap/extension-ordered-list';
+import Blockquote from '@tiptap/extension-blockquote';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
+import Strike from '@tiptap/extension-strike';
+import Underline from '@tiptap/extension-underline';
+import Code from '@tiptap/extension-code';
+import TextStyle from '@tiptap/extension-text-style';
 
+  // Define color options
+  const colorOptions = [
+    { name: 'Default', color: null },
+    { name: 'Black', color: '#000000' },
+    { name: 'Dark Gray', color: '#4D4D4D' },
+    { name: 'Gray', color: '#808080' },
+    { name: 'Light Gray', color: '#B3B3B3' },
+    { name: 'White', color: '#FFFFFF' },
+    { name: 'Red', color: '#FF0000' },
+    { name: 'Orange', color: '#FFA500' },
+    { name: 'Yellow', color: '#FFFF00' },
+    { name: 'Green', color: '#008000' },
+    { name: 'Blue', color: '#0000FF' },
+    { name: 'Purple', color: '#800080' },
+    { name: 'Pink', color: '#FFC0CB' },
+    { name: 'Brown', color: '#A52A2A' },
+  ];
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
 
 const NotesPage = () => {
+  const [textColor, setTextColor] = useState('');
   const { user } = useAuth();
   const [notes, setNotes] = useState([]);
   const [folders, setFolders] = useState([]);
@@ -50,6 +80,10 @@ const NotesPage = () => {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
   const [editFolderName, setEditFolderName] = useState('');
+
+
+
+
 
   // Function to replace images with placeholders in the preview content
   const getPreviewContent = (htmlContent) => {
@@ -88,16 +122,39 @@ const NotesPage = () => {
   // TipTap editor setup with advanced features
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2], // Heading levels H1 and H2
-        },
+      // Core extensions
+      Document,
+      Text,
+      History,
+      Gapcursor,
+      HardBreak,
+  
+      // Custom nodes
+      CustomParagraph,
+      CustomHeading.configure({
+        levels: [1, 2], // Heading levels H1 and H2
       }),
+  
+      // Marks
       Bold,
       Italic,
       Highlight,
+  
+      // Include TextStyle and Color after custom nodes
+      TextStyle, // Required for the Color extension
+      Color,
+  
+      FontSize,
+  
+      // Lists
+      ListItem,
       BulletList,
-      Gapcursor,
+      OrderedList,
+
+      //other extensions
+      Color,
+  
+      // Additional nodes
       CodeBlock.configure({
         HTMLAttributes: {
           class: 'code-block',
@@ -107,9 +164,13 @@ const NotesPage = () => {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      TextStyle, // Required for custom text attributes
-      Color,
-      FontSize, // Custom font size extension
+  
+      // Additional extensions if needed
+      Blockquote,
+      HorizontalRule,
+      Strike,
+      Underline,
+      Code,
     ],
     content: '',
     editorProps: {
@@ -204,6 +265,27 @@ const NotesPage = () => {
       },
     },
   });
+
+  useEffect(() => {
+    if (editor) {
+      const updateTextColor = () => {
+        const color = editor.getAttributes('textStyle').color || '';
+        setTextColor(color);
+      };
+  
+      // Update text color when selection changes
+      editor.on('selectionUpdate', updateTextColor);
+  
+      // Update text color when the content changes
+      editor.on('transaction', updateTextColor);
+  
+      // Cleanup on unmount
+      return () => {
+        editor.off('selectionUpdate', updateTextColor);
+        editor.off('transaction', updateTextColor);
+      };
+    }
+  }, [editor]);
 
   // Fetch folders and notes from Firestore
   useEffect(() => {
@@ -625,6 +707,7 @@ const NotesPage = () => {
         />
         {/* TipTap Toolbar */}
         <div>
+
           <button onClick={() => editor.chain().focus().toggleBold().run()} disabled={!editor} title="Bold">
             Bold
           </button>
@@ -698,28 +781,26 @@ const NotesPage = () => {
           </select>
 
           {/* Heading Colors */}
-          <button
-            onClick={() => editor.chain().focus().setColor('#000000').run()} // Black
-            disabled={!editor}
-            title="Black Heading"
-          >
-            Black
-          </button>
-          <button
-            onClick={() => editor.chain().focus().setColor('#4B70F5').run()} // Blue
-            disabled={!editor}
-            title="Blue Heading"
-          >
-            Blue
-          </button>
-          <button
-            onClick={() => editor.chain().focus().setColor('#344C64').run()} // Grey
-            disabled={!editor}
-            title="Grey Heading"
-          >
-            Grey
-          </button>
-
+          
+          <select
+    onChange={(e) => {
+      const color = e.target.value;
+      if (color) {
+        editor.chain().focus().setColor(color).run();
+      } else {
+        editor.chain().focus().unsetColor().run();
+      }
+    }}
+    disabled={!editor}
+    value={textColor}
+    title="Text Color"
+  >
+    {colorOptions.map((option, index) => (
+      <option key={index} value={option.color || ''}>
+        {option.name}
+      </option>
+    ))}
+  </select>
           {/* Image Upload Options */}
           <div>
             <input

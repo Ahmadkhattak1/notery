@@ -75,3 +75,48 @@
 }
 
 
+/* For spacing and paragraphs */
+/* Adjust line spacing */
+
+/* Adjust line spacing */
+
+.ProseMirror p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ProseMirror h1,
+.ProseMirror h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.ProseMirror p + p {
+  margin-top: 0.75em;
+}
+
+/* Adjust spacing when pressing Enter */
+.ProseMirror {
+  line-height: 1.5;
+}
+
+.ProseMirror p {
+  margin-bottom: 0;
+}
+
+.ProseMirror p + p {
+  margin-top: 1em;
+}
+
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.toolbar select {
+  padding: 0.3em;
+  font-size: 1em;
+}
