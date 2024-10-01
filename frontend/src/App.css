@@ -40,4 +40,29 @@
 .note-preview img {
   width: 250px;
   height: auto;
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0; /* Adds space above and below the image */
 }
+
+.minimized-image-placeholder {
+  display: block;
+  width: 100%;
+  max-height: 50px; /* Set a maximum height */
+  overflow: hidden; /* Hide any overflow */
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  text-align: center;
+  line-height: 50px; /* Vertically centers the text */
+  font-style: italic;
+  color: #666;
+  margin: 1em 0;
+}
+
+.minimized-image-placeholder * {
+  font-size: 14px; /* Ensure consistent font size */
+  line-height: normal; /* Reset line height */
+}
+
+

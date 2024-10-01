@@ -1,4 +1,5 @@
 // src/pages/NotesPage.js
+
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { db } from '../firebaseConfig';
@@ -18,19 +19,20 @@ import {
 import { useAuth } from '../contexts/AuthProvider';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
 import Highlight from '@tiptap/extension-highlight';
 import BulletList from '@tiptap/extension-bullet-list';
 import CodeBlock from '@tiptap/extension-code-block';
 import TextAlign from '@tiptap/extension-text-align';
-import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
-import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
-import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
-import '../App.css';
 import Gapcursor from '@tiptap/extension-gapcursor';
+import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
+import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
+import '../App.css';
+import truncate from 'html-truncate';
+import DOMPurify from 'dompurify';
 
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
@@ -48,6 +50,44 @@ const NotesPage = () => {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
   const [editFolderName, setEditFolderName] = useState('');
+
+  // Function to replace images with placeholders in the preview content
+  const getPreviewContent = (htmlContent) => {
+    const maxLength = 350;
+  
+    // Create a temporary DOM element to parse the HTML content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+  
+    // Flag to check if there are any images
+    let hasImages = false;
+  
+    // Replace images with placeholders
+    const images = tempDiv.getElementsByTagName('img');
+    if (images.length > 0) {
+      hasImages = true;
+      for (let img of images) {
+        const placeholderDiv = document.createElement('div');
+        placeholderDiv.className = 'minimized-image-placeholder';
+        placeholderDiv.textContent = '[Image Minimized]';
+        img.parentNode.replaceChild(placeholderDiv, img);
+      }
+    }
+  
+    // Get the inner HTML with formatting preserved
+    let contentHTML = tempDiv.innerHTML;
+  
+    // Safely truncate the content to maxLength characters
+    contentHTML = truncate(contentHTML, maxLength, { ellipsis: '...' });
+    contentHTML = DOMPurify.sanitize(contentHTML);
+
+  
+    // Return the content as a React element
+    return <div dangerouslySetInnerHTML={{ __html: contentHTML }} />;
+    
+  };
+
+    
 
   // TipTap editor setup with advanced features
   const editor = useEditor({
@@ -168,24 +208,24 @@ const NotesPage = () => {
       },
     },
   });
-    // Fetch folders and notes from Firestore
+
+  // Fetch folders and notes from Firestore
   useEffect(() => {
     if (!user) return;
-    
 
     // Fetch folders
     const unsubscribeFolders = onSnapshot(collection(db, 'folders'), (snapshot) => {
       const foldersData = snapshot.docs
-        .filter(doc => doc.data().userId === user.uid)
-        .map(doc => ({ id: doc.id, ...doc.data() }));
+        .filter((doc) => doc.data().userId === user.uid)
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
       setFolders(foldersData);
     });
 
     // Fetch notes
     const unsubscribeNotes = onSnapshot(collection(db, 'notes'), (snapshot) => {
       const notesData = snapshot.docs
-        .filter(doc => doc.data().userId === user.uid)
-        .map(doc => ({ id: doc.id, ...doc.data() }));
+        .filter((doc) => doc.data().userId === user.uid)
+        .map((doc) => ({ id: doc.id, ...doc.data() }));
       setNotes(notesData);
     });
 
@@ -220,7 +260,6 @@ const NotesPage = () => {
       console.error('Error adding note:', error);
       alert('Failed to add the note. Please try again.');
     }
-    
   };
 
   // Function to handle editing an existing note
@@ -260,22 +299,22 @@ const NotesPage = () => {
     setEditingNoteId(note.id);
     setEditTitle(note.title);
     setInitialContent(note.content); // Set the initial content for change detection
-    editor.commands.setContent(note.content, false); // Load note content into editor without parsing as HTML
-  // Ensure the editor instance is ready
-  if (editor) {
-    editor.commands.setContent(note.content);
-  } else {
-    // If the editor is not yet initialized, wait for it to be ready
-    const interval = setInterval(() => {
-      if (editor) {
-        editor.commands.setContent(note.content);
-        clearInterval(interval);
-      }
-    }, 100);
-  }
 
-  setIsModalOpen(true);
-};
+    // Ensure the editor instance is ready
+    if (editor) {
+      editor.commands.setContent(note.content);
+    } else {
+      // If the editor is not yet initialized, wait for it to be ready
+      const interval = setInterval(() => {
+        if (editor) {
+          editor.commands.setContent(note.content);
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+
+    setIsModalOpen(true);
+  };
 
   // Function to handle deleting a note
   const handleDeleteNote = async (noteId) => {
@@ -283,7 +322,7 @@ const NotesPage = () => {
 
     try {
       await deleteDoc(doc(db, 'notes', noteId));
-      console.log("Note deleted successfully");
+      console.log('Note deleted successfully');
     } catch (error) {
       console.error('Error deleting note:', error);
       alert('Failed to delete the note. Please try again.');
@@ -327,7 +366,7 @@ const NotesPage = () => {
       setEditingFolder(null);
       setEditFolderName('');
       setIsFolderModalOpen(false);
-      console.log("Folder renamed successfully");
+      console.log('Folder renamed successfully');
     } catch (error) {
       console.error('Error renaming folder:', error);
       alert('Failed to rename the folder. Please try again.');
@@ -336,7 +375,12 @@ const NotesPage = () => {
 
   // Function to handle deleting a folder
   const handleDeleteFolder = async (folderId) => {
-    if (!window.confirm('Are you sure you want to delete this folder? This will move all its notes to Home.')) return;
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this folder? This will move all its notes to Home.'
+      )
+    )
+      return;
 
     try {
       // Move all notes from this folder to Home (folderId = null)
@@ -352,7 +396,7 @@ const NotesPage = () => {
 
       // Delete the folder
       await deleteDoc(doc(db, 'folders', folderId));
-      console.log("Folder deleted and notes moved to Home successfully");
+      console.log('Folder deleted and notes moved to Home successfully');
     } catch (error) {
       console.error('Error deleting folder:', error);
       alert('Failed to delete the folder. Please try again.');
@@ -379,7 +423,7 @@ const NotesPage = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const url = reader.result;
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().setImage({ src: url, 'data-resizable-image': '' }).run();
     };
     reader.onerror = () => {
       console.error('Error reading file');
@@ -395,7 +439,7 @@ const NotesPage = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const url = reader.result;
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().setImage({ src: url, 'data-resizable-image': '' }).run();
     };
     reader.onerror = () => {
       console.error('Error reading file');
@@ -411,7 +455,13 @@ const NotesPage = () => {
       {/* Folder Management Section */}
       <div>
         <h2>Folders</h2>
-        <button onClick={() => { setIsFolderModalOpen(true); setEditingFolder(null); setEditFolderName(''); }}>
+        <button
+          onClick={() => {
+            setIsFolderModalOpen(true);
+            setEditingFolder(null);
+            setEditFolderName('');
+          }}
+        >
           Add Folder
         </button>
         <ul>
@@ -426,7 +476,10 @@ const NotesPage = () => {
             <li
               key={folder.id}
               onClick={() => setSelectedFolder(folder.id)}
-              style={{ cursor: 'pointer', fontWeight: selectedFolder === folder.id ? 'bold' : 'normal' }}
+              style={{
+                cursor: 'pointer',
+                fontWeight: selectedFolder === folder.id ? 'bold' : 'normal',
+              }}
             >
               {folder.name}
               <button
@@ -469,20 +522,34 @@ const NotesPage = () => {
       {/* Modal for Adding and Editing Folders */}
       <Modal
         isOpen={isFolderModalOpen}
-        onRequestClose={() => { setIsFolderModalOpen(false); setEditingFolder(null); setEditFolderName(''); }}
+        onRequestClose={() => {
+          setIsFolderModalOpen(false);
+          setEditingFolder(null);
+          setEditFolderName('');
+        }}
         contentLabel="Add/Edit Folder"
       >
         <h2>{editingFolder ? 'Edit Folder' : 'Add a New Folder'}</h2>
         <input
           type="text"
           value={editingFolder ? editFolderName : folderName}
-          onChange={(e) => editingFolder ? setEditFolderName(e.target.value) : setFolderName(e.target.value)}
+          onChange={(e) =>
+            editingFolder ? setEditFolderName(e.target.value) : setFolderName(e.target.value)
+          }
           placeholder="Folder Name"
         />
         <button onClick={editingFolder ? handleRenameFolder : handleAddFolder}>
           {editingFolder ? 'Save Changes' : 'Add Folder'}
         </button>
-        <button onClick={() => { setIsFolderModalOpen(false); setEditingFolder(null); setEditFolderName(''); }}>Cancel</button>
+        <button
+          onClick={() => {
+            setIsFolderModalOpen(false);
+            setEditingFolder(null);
+            setEditFolderName('');
+          }}
+        >
+          Cancel
+        </button>
       </Modal>
 
       {/* Modal for Adding and Editing Notes */}
@@ -506,19 +573,35 @@ const NotesPage = () => {
           <button onClick={() => editor.chain().focus().toggleItalic().run()} disabled={!editor} title="Italic">
             Italic
           </button>
-          <button onClick={() => editor.chain().focus().unsetAllMarks().run()} disabled={!editor} title="Remove Formatting">
+          <button
+            onClick={() => editor.chain().focus().unsetAllMarks().run()}
+            disabled={!editor}
+            title="Remove Formatting"
+          >
             Remove Formatting
           </button>
-          <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} disabled={!editor} title="Heading 1">
+          <button
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            disabled={!editor}
+            title="Heading 1"
+          >
             H1
           </button>
-          <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} disabled={!editor} title="Heading 2">
+          <button
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            disabled={!editor}
+            title="Heading 2"
+          >
             H2
           </button>
           <button onClick={() => editor.chain().focus().setParagraph().run()} disabled={!editor} title="Paragraph">
             Paragraph
           </button>
-          <button onClick={() => editor.chain().focus().setHorizontalRule().run()} disabled={!editor} title="Horizontal Line">
+          <button
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            disabled={!editor}
+            title="Horizontal Line"
+          >
             Horizontal Line
           </button>
           <button
@@ -531,7 +614,7 @@ const NotesPage = () => {
           >
             Date Stamp
           </button>
-          
+
           {/* Font Size Dropdown */}
           <select
             onChange={(e) => {
@@ -544,7 +627,9 @@ const NotesPage = () => {
             title="Change Font Size"
             defaultValue=""
           >
-            <option value="" disabled>Font Size</option>
+            <option value="" disabled>
+              Font Size
+            </option>
             <option value="12px">12px</option>
             <option value="14px">14px</option>
             <option value="16px">16px</option>
@@ -553,7 +638,7 @@ const NotesPage = () => {
             <option value="22px">22px</option>
             <option value="24px">24px</option>
           </select>
-          
+
           {/* Heading Colors */}
           <button
             onClick={() => editor.chain().focus().setColor('#000000').run()} // Black
@@ -576,7 +661,7 @@ const NotesPage = () => {
           >
             Grey
           </button>
-          
+
           {/* Image Upload Options */}
           <div>
             <input
@@ -613,20 +698,48 @@ const NotesPage = () => {
 
       {/* Notes List */}
       <div>
-        <h2>{selectedFolder ? `Folder: ${folders.find(f => f.id === selectedFolder)?.name || ''}` : 'Home'}</h2>
-        {notes.filter(note => selectedFolder === '' || note.folderId === selectedFolder).length === 0 ? (
+        <h2>
+          {selectedFolder
+            ? `Folder: ${folders.find((f) => f.id === selectedFolder)?.name || ''}`
+            : 'Home'}
+        </h2>
+        {notes.filter((note) => selectedFolder === '' || note.folderId === selectedFolder).length === 0 ? (
           <p>No notes in this {selectedFolder ? 'folder' : 'home'}.</p>
         ) : (
           <ul>
             {notes
-              .filter(note => selectedFolder === '' || note.folderId === selectedFolder)
+              .filter((note) => selectedFolder === '' || note.folderId === selectedFolder)
               .map((note) => (
                 <li key={note.id}>
                   <h4>{note.title}</h4>
-                  <div className="note-preview" dangerouslySetInnerHTML={{ __html: note.content }}></div>
-                  <p><small>Created: {note.createdAt?.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></p>
+                  <div className="note-preview">
+                    {getPreviewContent(note.content)}
+                  </div>
+                  <p>
+                    <small>
+                      Created:{' '}
+                      {note.createdAt?.toDate().toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </small>
+                  </p>
                   {note.updatedAt && (
-                    <p><small>Updated: {note.updatedAt.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></p>
+                    <p>
+                      <small>
+                        Updated:{' '}
+                        {note.updatedAt.toDate().toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </small>
+                    </p>
                   )}
                   <button onClick={() => openEditModal(note)}>Edit</button>
                   <button onClick={() => handleDeleteNote(note.id)}>Delete</button>
@@ -638,8 +751,10 @@ const NotesPage = () => {
                       onChange={(e) => handleMoveNote(note.id, e.target.value)}
                     >
                       <option value="">Home</option>
-                      {folders.map(folder => (
-                        <option key={folder.id} value={folder.id}>{folder.name}</option>
+                      {folders.map((folder) => (
+                        <option key={folder.id} value={folder.id}>
+                          {folder.name}
+                        </option>
                       ))}
                     </select>
                   </div>
