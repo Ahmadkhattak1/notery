@@ -28,6 +28,8 @@ import Italic from '@tiptap/extension-italic';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import FontSize from '../extensions/FontSize'; // Adjust the path as necessary
+import ResizableImage from '../extensions/ResizableImage'; // Adjust the path as necessary
+
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
 
@@ -62,12 +64,7 @@ const NotesPage = () => {
           class: 'code-block',
         },
       }),
-      Image.configure({
-        inline: true,
-        HTMLAttributes: {
-          style: 'max-width: 100%; height: auto;', // Responsive images
-        },
-      }),
+      ResizableImage,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -76,7 +73,7 @@ const NotesPage = () => {
       FontSize, // Custom font size extension
     ],
     content: '',
-    editorProps: {
+      editorProps: {
       handleKeyDown(view, event) {
         if (event.key === 'Tab') {
           event.preventDefault();
