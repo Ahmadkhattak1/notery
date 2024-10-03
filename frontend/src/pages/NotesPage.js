@@ -44,23 +44,23 @@ import Strike from '@tiptap/extension-strike';
 import Underline from '@tiptap/extension-underline';
 import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
+import { useRef } from 'react';
 
   // Define color options
   const colorOptions = [
-    { name: 'Default', color: null },
+    { name: 'Color', color: null },
     { name: 'Black', color: '#000000' },
     { name: 'Dark Gray', color: '#4D4D4D' },
-    { name: 'Gray', color: '#808080' },
+    { name: 'Gray', color: '#9B9A97' },
     { name: 'Light Gray', color: '#B3B3B3' },
-    { name: 'White', color: '#FFFFFF' },
-    { name: 'Red', color: '#FF0000' },
-    { name: 'Orange', color: '#FFA500' },
-    { name: 'Yellow', color: '#FFFF00' },
-    { name: 'Green', color: '#008000' },
-    { name: 'Blue', color: '#0000FF' },
-    { name: 'Purple', color: '#800080' },
-    { name: 'Pink', color: '#FFC0CB' },
-    { name: 'Brown', color: '#A52A2A' },
+    { name: 'Red', color: '#E03E3E' },
+    { name: 'Orange', color: '#D9730D' },
+    { name: 'Yellow', color: '#DFAB01' },
+    { name: 'Green', color: '#0F7B6C' },
+    { name: 'Blue', color: '#0B6E99' },
+    { name: 'Purple', color: '#6940A5' },
+    { name: 'Pink', color: '#AD1A72' },
+    { name: 'Brown', color: '#64473A' },
   ];
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
@@ -79,7 +79,9 @@ const NotesPage = () => {
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
   const [editFolderName, setEditFolderName] = useState('');
+  const titleInputRef = useRef(null);
 
+  
 
 
 
@@ -115,7 +117,6 @@ const NotesPage = () => {
     // Return the content as a React element
     return <div dangerouslySetInnerHTML={{ __html: contentHTML }} />;
   };
-  
     
 
   // TipTap editor setup with advanced features
@@ -150,13 +151,14 @@ const NotesPage = () => {
 
       //other extensions
       Color,
+      
   
       // Additional nodes
       CodeBlock.configure({
         HTMLAttributes: {
           class: 'code-block',
         },
-      }),
+        }),
       ResizableImage,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -168,9 +170,24 @@ const NotesPage = () => {
       Strike,
       Underline,
       Code,
+      
     ],
-    content: '',
+    content: '<p></p>',
     editorProps: {
+      attributes: {
+        class: 'editor-content',
+        'data-placeholder': 'Start typing here...',
+      },
+      onUpdate: ({ editor }) => {
+        const isEmpty = editor.isEmpty;
+        const editorElement = editor.view.dom;
+    
+        if (isEmpty) {
+          editorElement.classList.add('is-empty');
+        } else {
+          editorElement.classList.remove('is-empty');
+        }
+      },    
       handleKeyDown(view, event) {
         const editorInstance = this;
 
@@ -283,7 +300,26 @@ const NotesPage = () => {
       };
     }
   }, [editor]);
+  
+  const openModal = () => {
+    setIsModalOpen(true);
+    // Focus the title input after the modal opens
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 100);
+  };
 
+  
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Move focus to the editor
+      editor?.commands.focus();
+    }
+  };
+  
+  
   // Fetch folders and notes from Firestore
   useEffect(() => {
     if (!user) return;
@@ -646,15 +682,16 @@ const NotesPage = () => {
 
       {/* Add Note Button */}
       <button
-        onClick={() => {
-          setIsModalOpen(true);
-          setEditingNoteId(null);
-          setEditTitle('');
-          editor.commands.setContent('');
-        }}
-      >
-        Add Note
-      </button>
+  onClick={() => {
+    openModal();
+    setEditingNoteId(null);
+    setEditTitle('');
+    editor.commands.setContent('<p></p>'); // Clear editor content
+  }}
+>
+  Add Note
+</button>
+
 
       {/* Modal for Adding and Editing Folders */}
       <Modal
@@ -690,124 +727,215 @@ const NotesPage = () => {
       </Modal>
 
       {/* Modal for Adding and Editing Notes */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        contentLabel="Add/Edit Note"
-      >
-        <h2>{editingNoteId ? 'Edit Note' : 'Add a New Note'}</h2>
-        <input
-          type="text"
-          value={editTitle}
-          onChange={(e) => setEditTitle(e.target.value)}
-          placeholder="Note Title"
-        />
-        {/* TipTap Toolbar */}
-        <div>
 
-          <button onClick={() => editor.chain().focus().toggleBold().run()} disabled={!editor} title="Bold">
-            Bold
-          </button>
-          <button onClick={() => editor.chain().focus().toggleItalic().run()} disabled={!editor} title="Italic">
-            Italic
-          </button>
-          <button
-            onClick={() => editor.chain().focus().unsetAllMarks().run()}
-            disabled={!editor}
-            title="Remove Formatting"
-          >
-            Remove Formatting
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            disabled={!editor}
-            title="Heading 1"
-          >
-            H1
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            disabled={!editor}
-            title="Heading 2"
-          >
-            H2
-          </button>
-          <button onClick={() => editor.chain().focus().setParagraph().run()} disabled={!editor} title="Paragraph">
-            Paragraph
-          </button>
-          <button
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            disabled={!editor}
-            title="Horizontal Line"
-          >
-            Horizontal Line
-          </button>
-          <button
-            onClick={() => {
-              const date = new Date().toLocaleDateString();
-              editor.chain().focus().insertContent(`<p>${date}</p>`).run();
-            }}
-            disabled={!editor}
-            title="Insert Date Stamp"
-          >
-            Date Stamp
-          </button>
-
-
-          {/* Heading Colors */}
-          
-          <select
+{/* Modal for Adding and Editing Notes */}
+<Modal
+  isOpen={isModalOpen}
+  onRequestClose={() => setIsModalOpen(false)}
+  contentLabel="Add/Edit Note"
+>
+  <h2>{editingNoteId ? 'Edit Note' : 'Add a New Note'}</h2>
+  <input
+    type="text"
+    ref={titleInputRef}
+    value={editTitle}
     onChange={(e) => {
-      const color = e.target.value;
-      if (color) {
-        editor.chain().focus().setColor(color).run();
-      } else {
-        editor.chain().focus().unsetColor().run();
+      if (e.target.value.length <= 40) {
+        setEditTitle(e.target.value);
       }
     }}
-    disabled={!editor}
-    value={textColor}
-    title="Text Color"
+    placeholder="Note Title"
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        editor?.commands.focus();
+      }
+    }}
+    style={{
+      width: '100%',
+      padding: '0.5em',
+      marginBottom: '0.5em',
+      fontSize: '1em',
+    }}
+  />
+  {editTitle.length === 40 && <span>...</span>}
+
+  {/* TipTap Toolbar */}
+  <div className="toolbar">
+    <button
+      onClick={() => editor.chain().focus().toggleBold().run()}
+      disabled={!editor}
+      title="Bold"
+    >
+      Bold
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleItalic().run()}
+      disabled={!editor}
+      title="Italic"
+    >
+      Italic
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleUnderline().run()}
+      disabled={!editor}
+      title="Underline"
+    >
+      Underline
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleStrike().run()}
+      disabled={!editor}
+      title="Strike"
+    >
+      Strike
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+      disabled={!editor}
+      title="Heading 1"
+    >
+      H1
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+      disabled={!editor}
+      title="Heading 2"
+    >
+      H2
+    </button>
+    <button
+      onClick={() => editor.chain().focus().setParagraph().run()}
+      disabled={!editor}
+      title="Paragraph"
+    >
+      Paragraph
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+      disabled={!editor}
+      title="Code Block"
+    >
+      Code Block
+    </button>
+    <button
+      onClick={() => editor.chain().focus().setHorizontalRule().run()}
+      disabled={!editor}
+      title="Horizontal Line"
+    >
+      Horizontal Line
+    </button>
+    <button
+      onClick={() => {
+        const date = new Date().toLocaleDateString();
+        editor.chain().focus().insertContent(`<p>${date}</p>`).run();
+      }}
+      disabled={!editor}
+      title="Insert Date Stamp"
+    >
+      Date Stamp
+    </button>
+    <select
+      onChange={(e) => {
+        const color = e.target.value;
+        if (color) {
+          editor.chain().focus().setColor(color).run();
+        } else {
+          editor.chain().focus().unsetColor().run();
+        }
+      }}
+      disabled={!editor}
+      value={textColor}
+      title="Text Color"
+      style={{
+        padding: '0.3em',
+        fontSize: '1em',
+        marginLeft: '1em',
+      }}
+    >
+      {colorOptions.map((option, index) => (
+        <option key={index} value={option.color || ''}>
+          {option.name}
+        </option>
+      ))}
+    </select>
+
+    {/* Ordered List */}
+    <button
+      onClick={() => editor.chain().focus().toggleOrderedList().run()}
+      disabled={!editor}
+      title="Ordered List"
+    >
+      OL
+    </button>
+    {/* Bullet List */}
+    <button
+      onClick={() => editor.chain().focus().toggleBulletList().run()}
+      disabled={!editor}
+      title="Bullet List"
+    >
+      UL
+    </button>
+    {/* Image Upload Options */}
+    <div style={{ display: 'inline-block', marginLeft: '1em' }}>
+      <input
+        type="file"
+        onChange={handleImageUpload}
+        accept="image/*"
+        style={{ display: 'none' }}
+        id="imageUpload"
+      />
+      <label htmlFor="imageUpload" title="Upload Image" style={{ cursor: 'pointer', marginRight: '0.5em' }}>
+        Upload Image
+      </label>
+      <input
+        type="file"
+        onChange={handleCameraCapture}
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        id="cameraCapture"
+      />
+      <label htmlFor="cameraCapture" title="Take Photo" style={{ cursor: 'pointer' }}>
+        Take Photo
+      </label>
+    </div>
+  </div>
+
+  {/* Single Editor Container */}
+  <div
+    className="editor-container"
+    onClick={() => editor?.commands.focus()}
+    style={{ marginTop: '1em' }}
   >
-    {colorOptions.map((option, index) => (
-      <option key={index} value={option.color || ''}>
-        {option.name}
-      </option>
-    ))}
-  </select>
-          {/* Image Upload Options */}
-          <div>
-            <input
-              type="file"
-              onChange={handleImageUpload}
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="imageUpload"
-            />
-            <label htmlFor="imageUpload" title="Upload Image">
-              Upload Image
-            </label>
-            <input
-              type="file"
-              onChange={handleCameraCapture}
-              accept="image/*"
-              capture="environment" // Prompts camera on mobile devices
-              style={{ display: 'none' }}
-              id="cameraCapture"
-            />
-            <label htmlFor="cameraCapture" title="Take Photo">
-              Take Photo
-            </label>
-          </div>
-        </div>
-        {/* TipTap Editor */}
-        <EditorContent editor={editor} />
-        {/* Save and Cancel Buttons */}
-        <button onClick={editingNoteId ? handleEditNote : handleAddNote}>
-          {editingNoteId ? 'Save Changes' : 'Save Note'}
-        </button>
-        <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-      </Modal>
+    <EditorContent editor={editor} />
+  </div>
+
+  {/* Save and Cancel Buttons */}
+  <div style={{ marginTop: '1em', display: 'flex', gap: '1em' }}>
+    <button
+      onClick={editingNoteId ? handleEditNote : handleAddNote}
+      style={{
+        padding: '0.5em 1em',
+        fontSize: '1em',
+        cursor: 'pointer',
+      }}
+    >
+      {editingNoteId ? 'Save Changes' : 'Save Note'}
+    </button>
+    <button
+      onClick={() => setIsModalOpen(false)}
+      style={{
+        padding: '0.5em 1em',
+        fontSize: '1em',
+        cursor: 'pointer',
+      }}
+    >
+      Cancel
+    </button>
+  </div>
+</Modal>
+
 
       {/* Notes List */}
       <div>
