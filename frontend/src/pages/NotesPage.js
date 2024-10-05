@@ -365,6 +365,9 @@ const NotesPage = () => {
     };
   }, [user]);
 
+  // State to track the active note
+  const [activeNote, setActiveNote] = useState(null);
+
   // Function to handle adding a new note
   const handleAddNote = async () => {
     if (!editor) return;
@@ -406,7 +409,7 @@ const NotesPage = () => {
     }
 
     try {
-      await addDoc(collection(db, 'notes'), {
+      const docRef = await addDoc(collection(db, 'notes'), {
         title: title,
         content: editor.getHTML(),
         folderId: selectedFolder || null,
@@ -414,11 +417,25 @@ const NotesPage = () => {
         createdAt: serverTimestamp(),
         updatedAt: null,
       });
+
+      // Create a new note object
+      const newNote = {
+        id: docRef.id,
+        title,
+        content: editor.getHTML(),
+        folderId: selectedFolder || null,
+        userId: user.uid,
+        createdAt: new Date(), // Approximate client-side timestamp
+        updatedAt: null,
+      };
+
+      // Set the new note as active
+      setActiveNote(newNote);
+      setEditingNoteId(docRef.id);
       setEditTitle('');
       editor.commands.setContent(''); // Clear editor content
-      setActiveNote(null);
-      setEditingNoteId(null);
-      setSelectedFolder(''); // Optionally reset selected folder
+      setIsFolderModalOpen(false);
+      setSelectedFolder('');
     } catch (error) {
       console.error('Error adding note:', error);
       alert('Failed to add the note. Please try again.');
@@ -480,10 +497,18 @@ const NotesPage = () => {
         content: editor.getHTML(),
         updatedAt: serverTimestamp(),
       });
+
+      // Update the activeNote state
+      const updatedNote = {
+        ...activeNote,
+        title,
+        content: editor.getHTML(),
+        updatedAt: new Date(), // Approximate client-side timestamp
+      };
+      setActiveNote(updatedNote);
       setEditingNoteId(null);
       setEditTitle('');
       editor.commands.setContent(''); // Clear editor content
-      setActiveNote(null);
     } catch (error) {
       console.error('Error editing note:', error);
       alert('Failed to edit the note. Please try again.');
@@ -678,444 +703,448 @@ const NotesPage = () => {
     }
   };
 
-  // State to track the active note
-  const [activeNote, setActiveNote] = useState(null);
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <React.Fragment>
-        <div className={`notes-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-          {/* Hamburger Icon for Sidebar Toggle */}
-          <button
-            className="sidebar-toggle-button"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            title="Toggle Sidebar"
+      <div className={`notes-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* Hamburger Icon for Sidebar Toggle */}
+        <button
+          className="sidebar-toggle-button"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          title="Toggle Sidebar"
+        >
+          ☰
+        </button>
+
+        {/* Profile Section */}
+        <div className="profile-section">
+          <div
+            className="profile-icon"
+            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
           >
-            ☰
-          </button>
-
-          {/* Profile Section */}
-          <div className="profile-section">
-            <div
-              className="profile-icon"
-              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-            >
-              {user && user.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt="Profile"
-                  className="profile-picture"
-                />
-              ) : (
-                <div className="profile-placeholder">P</div>
-              )}
-            </div>
-            {isProfileDropdownOpen && (
-              <div className="profile-dropdown">
-                <ul>
-                  <li onClick={() => console.log('Profile settings clicked')}>
-                    Profile Settings
-                  </li>
-                  <li onClick={handleLogout}>Logout</li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Collections Sidebar */}
-          <div className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-            <h2>Collections</h2>
-            {/* Add Folder Modal Trigger */}
-            <button
-              className="add-folder-button"
-              onClick={() => {
-                setIsFolderModalOpen(true);
-                setEditingFolder(null);
-                setEditFolderName('');
-                setFolderName('');
-              }}
-              title="Add Collection"
-            >
-              +
-            </button>
-
-            <ul className="folders-list">
-              {folders.map((folder) => (
-                <li key={folder.id} className="folder-item">
-                  <div
-                    className="folder-header"
-                    onClick={() =>
-                      setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)
-                    }
-                  >
-                    <span className="folder-name">{folder.name}</span>
-                    <span className={`folder-toggle ${selectedFolder === folder.id ? 'rotate' : ''}`}>
-                      ▼
-                    </span>
-                  </div>
-                  {/* 3-Dot Dropdown */}
-                  <button
-                    className="folder-dots"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFolderDropdown(
-                        selectedFolderDropdown === folder.id ? null : folder.id
-                      );
-                      setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
-                    }}
-                  >
-                    ⋮
-                  </button>
-
-                  {/* Dropdown for Folder Actions */}
-                  {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
-                    <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
-                      <ul>
-                        <li onClick={() => handleEditFolder(folder)}>Edit</li>
-                        <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Plus Icon for Adding Note within Collection */}
-                  <button
-                    className="add-note-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFolder(folder.id);
-                      setEditingNoteId(null); // Ensure we're in "add" mode
-                      setEditTitle(''); // Clear any existing title
-                      setActiveNote(null); // Clear any active note
-                      if (editor) {
-                        editor.commands.setContent(''); // Clear editor content
-                      }
-                    }}
-                    title="Add Note"
-                  >
-                    +
-                  </button>
-
-                  {/* Notes List within Collection */}
-                  {selectedFolder === folder.id && (
-                    <Droppable droppableId={folder.id}>
-                      {(provided) => (
-                        <ul
-                          className="notes-list"
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                        >
-                          {notes
-                            .filter((note) => note.folderId === folder.id)
-                            .map((note, index) => (
-                              <Draggable
-                                key={note.id}
-                                draggableId={note.id}
-                                index={index}
-                              >
-                                {(provided) => (
-                                  <li
-                                    className={`note-title-item ${activeNote && activeNote.id === note.id ? 'active-note' : ''}`}
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                  >
-                                    <span
-                                      className="note-title"
-                                      onClick={() => openNote(note)}
-                                    >
-                                      {note.title}
-                                    </span>
-                                    {/* 3-Dot Dropdown for Notes */}
-                                    <button
-                                      className="note-dots"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedNoteDropdown(
-                                          selectedNoteDropdown === note.id
-                                            ? null
-                                            : note.id
-                                        );
-                                        setIsNoteDropdownOpen(
-                                          selectedNoteDropdown !== note.id
-                                        );
-                                      }}
-                                    >
-                                      ⋮
-                                    </button>
-
-                                    {/* Dropdown for Note Actions */}
-                                    {isNoteDropdownOpen &&
-                                      selectedNoteDropdown === note.id && (
-                                        <div className="note-dropdown-container note-management-dropdown show-dropdown">
-                                          <ul>
-                                            <li onClick={() => openNote(note)}>
-                                              Edit
-                                            </li>
-                                            <li onClick={() => handleDeleteNote(note.id)}>
-                                              Delete
-                                            </li>
-                                          </ul>
-                                        </div>
-                                      )}
-                                  </li>
-                                )}
-                              </Draggable>
-                            ))}
-                          {provided.placeholder}
-                        </ul>
-                      )}
-                    </Droppable>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Note Viewing and Editing Section */}
-          <div className="note-view-section">
-            {activeNote ? (
-              <div className="note-content">
-                <h2>{activeNote.title}</h2>
-                {/* TipTap Toolbar */}
-                <div className="toolbar">
-                  <button
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                    disabled={!editor}
-                    title="Bold"
-                    className={editor && editor.isActive('bold') ? 'active' : ''}
-                  >
-                    Bold
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
-                    disabled={!editor}
-                    title="Italic"
-                    className={editor && editor.isActive('italic') ? 'active' : ''}
-                  >
-                    Italic
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleUnderline().run()}
-                    disabled={!editor}
-                    title="Underline"
-                    className={editor && editor.isActive('underline') ? 'active' : ''}
-                  >
-                    Underline
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleStrike().run()}
-                    disabled={!editor}
-                    title="Strike"
-                    className={editor && editor.isActive('strike') ? 'active' : ''}
-                  >
-                    Strike
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                    disabled={!editor}
-                    title="Heading 1"
-                    className={editor && editor.isActive('heading', { level: 1 }) ? 'active' : ''}
-                  >
-                    H1
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                    disabled={!editor}
-                    title="Heading 2"
-                    className={editor && editor.isActive('heading', { level: 2 }) ? 'active' : ''}
-                  >
-                    H2
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().setParagraph().run()}
-                    disabled={!editor}
-                    title="Paragraph"
-                    className={editor && editor.isActive('paragraph') ? 'active' : ''}
-                  >
-                    Paragraph
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                    disabled={!editor}
-                    title="Code Block"
-                    className={editor && editor.isActive('codeBlock') ? 'active' : ''}
-                  >
-                    Code Block
-                  </button>
-                  <button
-                    onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                    disabled={!editor}
-                    title="Horizontal Line"
-                    className={editor && editor.isActive('horizontalRule') ? 'active' : ''}
-                  >
-                    Horizontal Line
-                  </button>
-                  <button
-                    onClick={() => {
-                      const date = new Date().toLocaleDateString();
-                      editor.chain().focus().insertContent(`<p>${date}</p>`).run();
-                    }}
-                    disabled={!editor}
-                    title="Insert Date Stamp"
-                  >
-                    Date Stamp
-                  </button>
-                  <select
-                    onChange={(e) => {
-                      const color = e.target.value;
-                      if (color) {
-                        editor.chain().focus().setColor(color).run();
-                      } else {
-                        editor.chain().focus().unsetColor().run();
-                      }
-                    }}
-                    disabled={!editor}
-                    value={textColor}
-                    title="Text Color"
-                    className="text-color-select"
-                  >
-                    {colorOptions.map((option, index) => (
-                      <option key={index} value={option.color || ''}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Ordered List */}
-                  <button
-                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    disabled={!editor}
-                    title="Ordered List"
-                    className={editor && editor.isActive('orderedList') ? 'active' : ''}
-                  >
-                    OL
-                  </button>
-                  {/* Bullet List */}
-                  <button
-                    onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    disabled={!editor}
-                    title="Bullet List"
-                    className={editor && editor.isActive('bulletList') ? 'active' : ''}
-                  >
-                    UL
-                  </button>
-                  {/* Image Upload Options */}
-                  <div className="image-upload-options">
-                    <input
-                      type="file"
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id="imageUploadEditor"
-                    />
-                    <label htmlFor="imageUploadEditor" title="Upload Image" className="image-upload-label">
-                      Upload Image
-                    </label>
-                    <input
-                      type="file"
-                      onChange={handleCameraCapture}
-                      accept="image/*"
-                      capture="environment"
-                      style={{ display: 'none' }}
-                      id="cameraCaptureEditor"
-                    />
-                    <label htmlFor="cameraCaptureEditor" title="Take Photo" className="image-upload-label">
-                      Take Photo
-                    </label>
-                  </div>
-                </div>
-
-                {/* Editor Container */}
-                <div
-                  className="editor-container"
-                  onClick={() => editor?.commands.focus()}
-                >
-                  <EditorContent editor={editor} />
-                </div>
-
-                {/* Save and Cancel Buttons */}
-                <div className="editor-buttons">
-                  <button
-                    className="save-button"
-                    onClick={editingNoteId ? handleEditNote : handleAddNote}
-                  >
-                    {editingNoteId ? 'Save Changes' : 'Save Note'}
-                  </button>
-                  <button
-                    className="cancel-button"
-                    onClick={() => {
-                      setActiveNote(null);
-                      setEditingNoteId(null);
-                      setEditTitle('');
-                      if (editor) {
-                        editor.commands.setContent('');
-                      }
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+            {user && user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt="Profile"
+                className="profile-picture"
+              />
             ) : (
-              <div className="no-note-selected">
-                <p>Select a note to view and edit its content.</p>
-              </div>
+              <div className="profile-placeholder">P</div>
             )}
           </div>
+          {isProfileDropdownOpen && (
+            <div className="profile-dropdown">
+              <ul>
+                <li onClick={() => console.log('Profile settings clicked')}>
+                  Profile Settings
+                </li>
+                <li onClick={handleLogout}>Logout</li>
+              </ul>
+            </div>
+          )}
+        </div>
 
-          {/* Add/Edit Folder Modal */}
-          <Modal
-            isOpen={isFolderModalOpen}
-            onRequestClose={() => {
-              setIsFolderModalOpen(false);
+        {/* Collections Sidebar */}
+        <div className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+          <h2>Collections</h2>
+          {/* Add Folder Modal Trigger */}
+          <button
+            className="add-folder-button"
+            onClick={() => {
+              setIsFolderModalOpen(true);
               setEditingFolder(null);
               setEditFolderName('');
               setFolderName('');
             }}
-            contentLabel="Add/Edit Folder"
-            className="modal-content"
-            overlayClassName="ReactModal__Overlay"
+            title="Add Collection"
           >
-            <h2>{editingFolder ? 'Edit Collection' : 'Add Collection'}</h2>
-            <div className="folder-modal-content">
-              <input
-                type="text"
-                placeholder="Folder Name"
-                value={editingFolder ? editFolderName : folderName}
-                onChange={(e) => {
-                  if (editingFolder) {
-                    setEditFolderName(e.target.value);
-                  } else {
-                    setFolderName(e.target.value);
+            +
+          </button>
+
+          <ul className="folders-list">
+            {folders.map((folder) => (
+              <li key={folder.id} className="folder-item">
+                <div
+                  className="folder-header"
+                  onClick={() =>
+                    setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)
                   }
-                }}
-                onKeyDown={handleTitleKeyDown}
-                ref={titleInputRef}
-                className="folder-name-input"
-              />
-            </div>
-            <div className="modal-buttons">
-              <button
-                className="save-button"
-                onClick={editingFolder ? handleRenameFolder : handleAddFolder}
-              >
-                {editingFolder ? 'Save Changes' : 'Add Folder'}
-              </button>
-              <button
-                className="cancel-button"
-                onClick={() => {
-                  setIsFolderModalOpen(false);
-                  setEditingFolder(null);
-                  setEditFolderName('');
-                  setFolderName('');
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </Modal>
+                >
+                  <span className="folder-name">{folder.name}</span>
+                  <span className={`folder-toggle ${selectedFolder === folder.id ? 'rotate' : ''}`}>
+                    ▼
+                  </span>
+                </div>
+                {/* 3-Dot Dropdown */}
+                <button
+                  className="folder-dots"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFolderDropdown(
+                      selectedFolderDropdown === folder.id ? null : folder.id
+                    );
+                    setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
+                  }}
+                >
+                  ⋮
+                </button>
+
+                {/* Dropdown for Folder Actions */}
+                {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
+                  <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
+                    <ul>
+                      <li onClick={() => handleEditFolder(folder)}>Edit</li>
+                      <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
+                    </ul>
+                  </div>
+                )}
+
+                {/* Plus Icon for Adding Note within Collection */}
+                <button
+                  className="add-note-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFolder(folder.id);
+                    setEditingNoteId(null); // Ensure we're in "add" mode
+                    setEditTitle('');
+                    const newNote = {
+                      id: null, // Indicate it's a new note
+                      title: '',
+                      content: '',
+                      folderId: folder.id,
+                      userId: user.uid,
+                      createdAt: null,
+                      updatedAt: null,
+                    };
+                    setActiveNote(newNote);
+                    if (editor) {
+                      editor.commands.setContent('');
+                    }
+                  }}
+                  title="Add Note"
+                >
+                  +
+                </button>
+
+                {/* Notes List within Collection */}
+                {selectedFolder === folder.id && (
+                  <Droppable droppableId={folder.id}>
+                    {(provided) => (
+                      <ul
+                        className="notes-list"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {notes
+                          .filter((note) => note.folderId === folder.id)
+                          .map((note, index) => (
+                            <Draggable
+                              key={note.id}
+                              draggableId={note.id}
+                              index={index}
+                            >
+                              {(provided) => (
+                                <li
+                                  className={`note-title-item ${activeNote && activeNote.id === note.id ? 'active-note' : ''}`}
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                >
+                                  <span
+                                    className="note-title"
+                                    onClick={() => openNote(note)}
+                                  >
+                                    {note.title}
+                                  </span>
+                                  {/* 3-Dot Dropdown for Notes */}
+                                  <button
+                                    className="note-dots"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedNoteDropdown(
+                                        selectedNoteDropdown === note.id
+                                          ? null
+                                          : note.id
+                                      );
+                                      setIsNoteDropdownOpen(
+                                        selectedNoteDropdown !== note.id
+                                      );
+                                    }}
+                                  >
+                                    ⋮
+                                  </button>
+
+                                  {/* Dropdown for Note Actions */}
+                                  {isNoteDropdownOpen &&
+                                    selectedNoteDropdown === note.id && (
+                                      <div className="note-dropdown-container note-management-dropdown show-dropdown">
+                                        <ul>
+                                          <li onClick={() => openNote(note)}>
+                                            Edit
+                                          </li>
+                                          <li onClick={() => handleDeleteNote(note.id)}>
+                                            Delete
+                                          </li>
+                                        </ul>
+                                      </div>
+                                    )}
+                                </li>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                      </ul>
+                    )}
+                  </Droppable>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
-      </React.Fragment>
+
+        {/* Note Viewing and Editing Section */}
+        <div className="note-view-section">
+          {activeNote ? (
+            <div className="note-content">
+              <h2>{activeNote.title || 'Untitled Note'}</h2>
+              {/* TipTap Toolbar */}
+              <div className="toolbar">
+                <button
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  disabled={!editor}
+                  title="Bold"
+                  className={editor && editor.isActive('bold') ? 'active' : ''}
+                >
+                  Bold
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleItalic().run()}
+                  disabled={!editor}
+                  title="Italic"
+                  className={editor && editor.isActive('italic') ? 'active' : ''}
+                >
+                  Italic
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleUnderline().run()}
+                  disabled={!editor}
+                  title="Underline"
+                  className={editor && editor.isActive('underline') ? 'active' : ''}
+                >
+                  Underline
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleStrike().run()}
+                  disabled={!editor}
+                  title="Strike"
+                  className={editor && editor.isActive('strike') ? 'active' : ''}
+                >
+                  Strike
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                  disabled={!editor}
+                  title="Heading 1"
+                  className={editor && editor.isActive('heading', { level: 1 }) ? 'active' : ''}
+                >
+                  H1
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                  disabled={!editor}
+                  title="Heading 2"
+                  className={editor && editor.isActive('heading', { level: 2 }) ? 'active' : ''}
+                >
+                  H2
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().setParagraph().run()}
+                  disabled={!editor}
+                  title="Paragraph"
+                  className={editor && editor.isActive('paragraph') ? 'active' : ''}
+                >
+                  Paragraph
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                  disabled={!editor}
+                  title="Code Block"
+                  className={editor && editor.isActive('codeBlock') ? 'active' : ''}
+                >
+                  Code Block
+                </button>
+                <button
+                  onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                  disabled={!editor}
+                  title="Horizontal Line"
+                  className={editor && editor.isActive('horizontalRule') ? 'active' : ''}
+                >
+                  Horizontal Line
+                </button>
+                <button
+                  onClick={() => {
+                    const date = new Date().toLocaleDateString();
+                    editor.chain().focus().insertContent(`<p>${date}</p>`).run();
+                  }}
+                  disabled={!editor}
+                  title="Insert Date Stamp"
+                >
+                  Date Stamp
+                </button>
+                <select
+                  onChange={(e) => {
+                    const color = e.target.value;
+                    if (color) {
+                      editor.chain().focus().setColor(color).run();
+                    } else {
+                      editor.chain().focus().unsetColor().run();
+                    }
+                  }}
+                  disabled={!editor}
+                  value={textColor}
+                  title="Text Color"
+                  className="text-color-select"
+                >
+                  {colorOptions.map((option, index) => (
+                    <option key={index} value={option.color || ''}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Ordered List */}
+                <button
+                  onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                  disabled={!editor}
+                  title="Ordered List"
+                  className={editor && editor.isActive('orderedList') ? 'active' : ''}
+                >
+                  OL
+                </button>
+                {/* Bullet List */}
+                <button
+                  onClick={() => editor.chain().focus().toggleBulletList().run()}
+                  disabled={!editor}
+                  title="Bullet List"
+                  className={editor && editor.isActive('bulletList') ? 'active' : ''}
+                >
+                  UL
+                </button>
+                {/* Image Upload Options */}
+                <div className="image-upload-options">
+                  <input
+                    type="file"
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="imageUploadEditor"
+                  />
+                  <label htmlFor="imageUploadEditor" title="Upload Image" className="image-upload-label">
+                    Upload Image
+                  </label>
+                  <input
+                    type="file"
+                    onChange={handleCameraCapture}
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    id="cameraCaptureEditor"
+                  />
+                  <label htmlFor="cameraCaptureEditor" title="Take Photo" className="image-upload-label">
+                    Take Photo
+                  </label>
+                </div>
+              </div>
+
+              {/* Editor Container */}
+              <div
+                className="editor-container"
+                onClick={() => editor?.commands.focus()}
+              >
+                <EditorContent editor={editor} />
+              </div>
+
+              {/* Save and Cancel Buttons */}
+              <div className="editor-buttons">
+                <button
+                  className="save-button"
+                  onClick={editingNoteId ? handleEditNote : handleAddNote}
+                >
+                  {editingNoteId ? 'Save Changes' : 'Save Note'}
+                </button>
+                <button
+                  className="cancel-button"
+                  onClick={() => {
+                    setActiveNote(null);
+                    setEditingNoteId(null);
+                    setEditTitle('');
+                    if (editor) {
+                      editor.commands.setContent('');
+                    }
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="no-note-selected">
+              <p>Select a note to view and edit its content.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add/Edit Folder Modal */}
+        <Modal
+          isOpen={isFolderModalOpen}
+          onRequestClose={() => {
+            setIsFolderModalOpen(false);
+            setEditingFolder(null);
+            setEditFolderName('');
+            setFolderName('');
+          }}
+          contentLabel="Add/Edit Folder"
+          className="modal-content"
+          overlayClassName="ReactModal__Overlay"
+        >
+          <h2>{editingFolder ? 'Edit Collection' : 'Add Collection'}</h2>
+          <div className="folder-modal-content">
+            <input
+              type="text"
+              placeholder="Folder Name"
+              value={editingFolder ? editFolderName : folderName}
+              onChange={(e) => {
+                if (editingFolder) {
+                  setEditFolderName(e.target.value);
+                } else {
+                  setFolderName(e.target.value);
+                }
+              }}
+              onKeyDown={handleTitleKeyDown}
+              ref={titleInputRef}
+              className="folder-name-input"
+            />
+          </div>
+          <div className="modal-buttons">
+            <button
+              className="save-button"
+              onClick={editingFolder ? handleRenameFolder : handleAddFolder}
+            >
+              {editingFolder ? 'Save Changes' : 'Add Folder'}
+            </button>
+            <button
+              className="cancel-button"
+              onClick={() => {
+                setIsFolderModalOpen(false);
+                setEditingFolder(null);
+                setEditFolderName('');
+                setFolderName('');
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      </div>
     </DragDropContext>
   );
 };
