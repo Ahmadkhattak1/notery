@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthProvider';
 import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit'; // Use StarterKit for essential functionalities
 import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
 import Highlight from '@tiptap/extension-highlight';
@@ -76,7 +77,7 @@ const NotesPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // For Sidebar Toggle
 
   const colorOptions = [
-    { name: 'Color', color: null },
+    { name: 'Color', color: '' },
     { name: 'Black', color: '#000000' },
     { name: 'Dark Gray', color: '#4D4D4D' },
     { name: 'Gray', color: '#9B9A97' },
@@ -134,34 +135,23 @@ const NotesPage = () => {
   // TipTap editor setup with advanced features
   const editor = useEditor({
     extensions: [
-      // Core extensions
-      Document,
-      Text,
-      History,
-      Gapcursor,
-      HardBreak,
-
-      // Custom nodes
-      CustomParagraph,
-      CustomHeading.configure({
-        levels: [1, 2], // Heading levels H1 and H2
+      // StarterKit includes essential extensions like Paragraph, Heading, etc.
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2],
+        },
       }),
-
-      // Marks
+      Gapcursor,
+      Highlight,
+      Color,
+      TextStyle,
       Bold,
       Italic,
-      Highlight,
-
-      // Include TextStyle and Color after custom nodes
-      TextStyle, // Required for the Color extension
-      Color,
-
-      // Lists
-      ListItem,
+      Underline,
+      Strike,
       BulletList,
       OrderedList,
-
-      // Other extensions
+      ListItem,
       CodeBlock.configure({
         HTMLAttributes: {
           class: 'code-block',
@@ -171,15 +161,13 @@ const NotesPage = () => {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-
-      // Additional extensions if needed
       Blockquote,
       HorizontalRule,
-      Strike,
-      Underline,
       Code,
+      CustomHeading,
+      CustomParagraph,
     ],
-    content: '<p></p>',
+    content: '',
     editorProps: {
       attributes: {
         class: 'editor-content',
@@ -372,146 +360,104 @@ const NotesPage = () => {
   const handleAddNote = async () => {
     if (!editor) return;
 
-    // Trim the editTitle to check if it's empty or only whitespace
-    let title = editTitle.trim();
+    // Generate a new note object
+    const newNote = {
+      id: null, // Will be set after Firestore
+      title: '',
+      content: '',
+      folderId: selectedFolder || null,
+      userId: user.uid,
+      createdAt: null,
+      updatedAt: null,
+    };
 
-    if (!title) {
-      // Generate title from content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = editor.getHTML();
-
-      // Remove images and other non-text elements
-      const images = tempDiv.getElementsByTagName('img');
-      while (images.length > 0) {
-        images[0].parentNode.removeChild(images[0]);
-      }
-
-      // Get the text content
-      let textContent = tempDiv.textContent || tempDiv.innerText || '';
-      textContent = textContent.trim();
-
-      // Remove extra spaces and get the first 40 non-space characters
-      if (textContent.length > 0) {
-        // Remove consecutive spaces
-        textContent = textContent.replace(/\s+/g, ' ');
-        // Get the first 40 characters
-        title = textContent.substring(0, 40);
-      } else {
-        // If content is empty, set a default title
-        title = 'Untitled Note';
-      }
-    }
-
-    // Check if content is empty
-    if (!editor.getHTML().trim()) {
-      alert("Content can't be empty");
-      return;
-    }
-
-    try {
-      const docRef = await addDoc(collection(db, 'notes'), {
-        title: title,
-        content: editor.getHTML(),
-        folderId: selectedFolder || null,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: null,
-      });
-
-      // Create a new note object
-      const newNote = {
-        id: docRef.id,
-        title,
-        content: editor.getHTML(),
-        folderId: selectedFolder || null,
-        userId: user.uid,
-        createdAt: new Date(), // Approximate client-side timestamp
-        updatedAt: null,
-      };
-
-      // Set the new note as active
-      setActiveNote(newNote);
-      setEditingNoteId(docRef.id);
-      setEditTitle('');
-      editor.commands.setContent(''); // Clear editor content
-      setIsFolderModalOpen(false);
-      setSelectedFolder('');
-    } catch (error) {
-      console.error('Error adding note:', error);
-      alert('Failed to add the note. Please try again.');
+    setActiveNote(newNote);
+    setEditingNoteId(null);
+    setEditTitle('');
+    if (editor) {
+      editor.commands.setContent('<h1></h1>'); // Initialize with an empty heading and paragraph
     }
   };
 
-  // Function to handle editing an existing note
-  const handleEditNote = async () => {
-    if (!editor || !editingNoteId) return;
+  // Function to handle saving a new or edited note
+  const handleSaveNote = async () => {
+    if (!editor) return;
 
-    // Trim the editTitle to check if it's empty or only whitespace
-    let title = editTitle.trim();
+    const htmlContent = editor.getHTML();
+
+    // Extract the first heading as the title
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+
+    const heading = tempDiv.querySelector('h1, h2');
+    let title = heading ? heading.textContent.trim() : '';
 
     if (!title) {
-      // Generate title from content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = editor.getHTML();
-
-      // Remove images and other non-text elements
-      const images = tempDiv.getElementsByTagName('img');
-      while (images.length > 0) {
-        images[0].parentNode.removeChild(images[0]);
-      }
-
-      // Get the text content
-      let textContent = tempDiv.textContent || tempDiv.innerText || '';
-      textContent = textContent.trim();
-
-      // Remove extra spaces and get the first 40 non-space characters
+      // Generate title from content by replacing line breaks with spaces
+      const textContent = tempDiv.textContent.replace(/\n/g, ' ').trim();
       if (textContent.length > 0) {
-        // Remove consecutive spaces
-        textContent = textContent.replace(/\s+/g, ' ');
-        // Get the first 40 characters
         title = textContent.substring(0, 40);
       } else {
-        // If content is empty, set a default title
         title = 'Untitled Note';
       }
     }
 
     // Check if content is empty
-    if (!editor.getHTML().trim()) {
+    if (!htmlContent.trim()) {
       alert("Content can't be empty");
       return;
     }
 
-    if (initialContent === editor.getHTML()) {
-      // No changes were made, just close the editor
-      setActiveNote(null);
-      setEditingNoteId(null);
-      setEditTitle('');
-      return;
-    }
-
     try {
-      const noteRef = doc(db, 'notes', editingNoteId);
-      await updateDoc(noteRef, {
-        title: title,
-        content: editor.getHTML(),
-        updatedAt: serverTimestamp(),
-      });
+      if (activeNote.id) {
+        // Editing an existing note
+        const noteRef = doc(db, 'notes', activeNote.id);
+        await updateDoc(noteRef, {
+          title: title,
+          content: htmlContent,
+          updatedAt: serverTimestamp(),
+        });
 
-      // Update the activeNote state
-      const updatedNote = {
-        ...activeNote,
-        title,
-        content: editor.getHTML(),
-        updatedAt: new Date(), // Approximate client-side timestamp
-      };
-      setActiveNote(updatedNote);
-      setEditingNoteId(null);
-      setEditTitle('');
-      editor.commands.setContent(''); // Clear editor content
+        // Update the activeNote state
+        const updatedNote = {
+          ...activeNote,
+          title,
+          content: htmlContent,
+          updatedAt: new Date(), // Approximate client-side timestamp
+        };
+        setActiveNote(updatedNote);
+        setEditingNoteId(null);
+        setEditTitle('');
+      } else {
+        // Adding a new note
+        const docRef = await addDoc(collection(db, 'notes'), {
+          title: title,
+          content: htmlContent,
+          folderId: selectedFolder || null,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+          updatedAt: null,
+        });
+
+        // Create a new note object
+        const createdNote = {
+          id: docRef.id,
+          title,
+          content: htmlContent,
+          folderId: selectedFolder || null,
+          userId: user.uid,
+          createdAt: new Date(), // Approximate client-side timestamp
+          updatedAt: null,
+        };
+
+        // Set the new note as active
+        setActiveNote(createdNote);
+        setEditingNoteId(docRef.id);
+        setEditTitle('');
+      }
     } catch (error) {
-      console.error('Error editing note:', error);
-      alert('Failed to edit the note. Please try again.');
+      console.error('Error saving note:', error);
+      alert('Failed to save the note. Please try again.');
     }
   };
 
@@ -784,6 +730,7 @@ const NotesPage = () => {
                     );
                     setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
                   }}
+                  aria-label="Folder Options"
                 >
                   ⋮
                 </button>
@@ -803,22 +750,8 @@ const NotesPage = () => {
                   className="add-note-icon"
                   onClick={(e) => {
                     e.stopPropagation();
+                    handleAddNote(); // Open the editor for a new note
                     setSelectedFolder(folder.id);
-                    setEditingNoteId(null); // Ensure we're in "add" mode
-                    setEditTitle('');
-                    const newNote = {
-                      id: null, // Indicate it's a new note
-                      title: '',
-                      content: '',
-                      folderId: folder.id,
-                      userId: user.uid,
-                      createdAt: null,
-                      updatedAt: null,
-                    };
-                    setActiveNote(newNote);
-                    if (editor) {
-                      editor.commands.setContent('');
-                    }
                   }}
                   title="Add Note"
                 >
@@ -869,6 +802,7 @@ const NotesPage = () => {
                                         selectedNoteDropdown !== note.id
                                       );
                                     }}
+                                    aria-label="Note Options"
                                   >
                                     ⋮
                                   </button>
@@ -905,7 +839,6 @@ const NotesPage = () => {
         <div className="note-view-section">
           {activeNote ? (
             <div className="note-content">
-              <h2>{activeNote.title || 'Untitled Note'}</h2>
               {/* TipTap Toolbar */}
               <div className="toolbar">
                 <button
@@ -1067,9 +1000,9 @@ const NotesPage = () => {
               <div className="editor-buttons">
                 <button
                   className="save-button"
-                  onClick={editingNoteId ? handleEditNote : handleAddNote}
+                  onClick={handleSaveNote}
                 >
-                  {editingNoteId ? 'Save Changes' : 'Save Note'}
+                  {activeNote.id ? 'Save Changes' : 'Save Note'}
                 </button>
                 <button
                   className="cancel-button"
