@@ -166,7 +166,7 @@ const NotesPage = () => {
       CustomHeading,
       CustomParagraph,
     ],
-    content: '',
+    content: '<h1></h1><p></p>', // Initialize with empty title and paragraph
     editorProps: {
       attributes: {
         class: 'editor-content',
@@ -176,77 +176,35 @@ const NotesPage = () => {
         const isEmpty = editor.isEmpty;
         const editorElement = editor.view.dom;
 
-        if (isEmpty) {
-          editorElement.classList.add('is-empty');
-        } else {
-          editorElement.classList.remove('is-empty');
-        }
+        // Add 'is-empty' class to heading and paragraph elements if they are empty
+        const headings = editorElement.querySelectorAll('h1, h2');
+        headings.forEach((heading) => {
+          if (heading.textContent.trim() === '') {
+            heading.classList.add('is-empty');
+          } else {
+            heading.classList.remove('is-empty');
+          }
+        });
+
+        const paragraphs = editorElement.querySelectorAll('p');
+        paragraphs.forEach((p) => {
+          if (p.textContent.trim() === '') {
+            p.classList.add('is-empty');
+          } else {
+            p.classList.remove('is-empty');
+          }
+        });
       },
       handleKeyDown(view, event) {
         const editorInstance = this;
 
         if (event.key === 'Tab') {
           event.preventDefault();
-          editorInstance.chain().focus().insertContent('    ').run(); // Insert 4 spaces
+          editorInstance.chain().focus().insertText('    ').run(); // Insert 4 spaces
           return true;
         }
 
-        if (event.key === 'Backspace' || event.key === 'Delete') {
-          // Prevent deleting images with Backspace or Delete keys
-          const { state } = view;
-          const { $from, empty } = state.selection;
-
-          if (empty) {
-            const nodeBefore = $from.nodeBefore;
-            const nodeAfter = $from.nodeAfter;
-
-            if (
-              (nodeBefore && nodeBefore.type.name === 'image') ||
-              (nodeAfter && nodeAfter.type.name === 'image')
-            ) {
-              // Prevent deletion
-              event.preventDefault();
-              return true;
-            }
-          } else {
-            const { from, to } = state.selection;
-            let hasImage = false;
-            state.doc.nodesBetween(from, to, (node) => {
-              if (node.type.name === 'image') {
-                hasImage = true;
-              }
-            });
-            if (hasImage) {
-              // Prevent deletion
-              event.preventDefault();
-              return true;
-            }
-          }
-
-          // Existing Backspace logic for deleting indentation spaces
-          if (event.key === 'Backspace') {
-            const { from } = state.selection;
-            if (from < 4) return false; // Prevent removing beyond start
-
-            const text = state.doc.textBetween(from - 4, from, '\n', '\0');
-            if (text === '    ') {
-              event.preventDefault();
-              editorInstance.chain().focus().deleteRange({ from: from - 4, to: from }).run();
-              return true;
-            }
-          }
-        }
-
-        if (event.key === ' ' && !event.shiftKey) {
-          const { $from } = view.state.selection;
-          const before = view.state.doc.textBetween($from.before(), $from.pos, '\n', '\0');
-          if (before.endsWith('  ')) {
-            // Double space
-            event.preventDefault();
-            editorInstance.chain().focus().insertContent('    ').run(); // Indent by 4 spaces
-            return true;
-          }
-        }
+        // Remove any existing space restriction logic
 
         return false;
       },
@@ -374,7 +332,7 @@ const NotesPage = () => {
     setEditingNoteId(null);
     setEditTitle('');
     if (editor) {
-      editor.commands.setContent('<h1></h1>'); // Initialize with an empty heading
+      editor.commands.setContent('<h1></h1><p></p>'); // Initialize with empty title and paragraph
     }
   };
 
@@ -482,7 +440,7 @@ const NotesPage = () => {
         setEditingNoteId(null);
         setEditTitle('');
         if (editor) {
-          editor.commands.setContent('');
+          editor.commands.setContent('<h1></h1><p></p>'); // Reset to empty title and paragraph
         }
       }
       console.log('Note deleted successfully');
@@ -650,55 +608,57 @@ const NotesPage = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className={`notes-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <div className="notes-container">
         {/* Hamburger Icon for Sidebar Toggle */}
         <button
           className="sidebar-toggle-button"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           title="Toggle Sidebar"
+          aria-label="Toggle Sidebar"
+          aria-expanded={isSidebarOpen}
         >
           ☰
         </button>
 
-{/* Profile Section */}
-<div className="profile-section">
-  <div
-    className="profile-icon"
-    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-  >
-    {user && user.photoURL ? (
-      <img
-        src={user.photoURL}
-        alt="Profile"
-        className="profile-picture"
-      />
-    ) : (
-      <div className="profile-placeholder">P</div>
-    )}
-  </div>
-  {isProfileDropdownOpen && (
-    <div className="profile-dropdown">
-      <ul>
-        <li
-          onClick={() => {
-            setIsProfileDropdownOpen(false); // Close dropdown
-            navigate('/profile'); // Navigate to the profile page
-          }}
-        >
-          Profile Settings
-        </li>
-        <li
-          onClick={() => {
-            setIsProfileDropdownOpen(false); // Close dropdown
-            handleLogout(); // Call the logout function
-          }}
-        >
-          Logout
-        </li>
-      </ul>
-    </div>
-  )}
-</div>
+        {/* Profile Section */}
+        <div className="profile-section">
+          <div
+            className="profile-icon"
+            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+          >
+            {user && user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt="Profile"
+                className="profile-picture"
+              />
+            ) : (
+              <div className="profile-placeholder">P</div>
+            )}
+          </div>
+          {isProfileDropdownOpen && (
+            <div className="profile-dropdown">
+              <ul>
+                <li
+                  onClick={() => {
+                    setIsProfileDropdownOpen(false); // Close dropdown
+                    navigate('/profile'); // Navigate to the profile page
+                  }}
+                >
+                  Profile Settings
+                </li>
+                <li
+                  onClick={() => {
+                    setIsProfileDropdownOpen(false); // Close dropdown
+                    handleLogout(); // Call the logout function
+                  }}
+                >
+                  Logout
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
 
         {/* Collections Sidebar */}
         <div className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
@@ -718,58 +678,58 @@ const NotesPage = () => {
           </button>
 
           <ul className="folders-list">
-  {folders.map((folder) => (
-    <li key={folder.id} className="folder-item">
-      {/* Folder Header Container */}
-      <div
-        className="folder-header"
-        onClick={() => setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)}
-      >
-        {/* Folder Toggle Arrow (at the far left) */}
-        <span className="folder-toggle">
-          {selectedFolder === folder.id ? '▼' : '▲'}
-        </span>
+            {folders.map((folder) => (
+              <li key={folder.id} className="folder-item">
+                {/* Folder Header Container */}
+                <div
+                  className="folder-header"
+                  onClick={() => setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)}
+                >
+                  {/* Folder Toggle Arrow (at the far left) */}
+                  <span className="folder-toggle">
+                    {selectedFolder === folder.id ? '▼' : '▲'}
+                  </span>
 
-        {/* Folder Name */}
-        <span className="folder-name">{folder.name}</span>
+                  {/* Folder Name */}
+                  <span className="folder-name">{folder.name}</span>
 
-        {/* Plus Icon for Adding Note within Collection */}
-        <button
-          className="add-note-icon"
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
-            handleAddNote(); // Open the editor for a new note
-            setSelectedFolder(folder.id);
-          }}
-          title="Add Note"
-        >
-          +
-        </button>
+                  {/* Plus Icon for Adding Note within Collection */}
+                  <button
+                    className="add-note-icon"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
+                      handleAddNote(); // Open the editor for a new note
+                      setSelectedFolder(folder.id);
+                    }}
+                    title="Add Note"
+                  >
+                    +
+                  </button>
 
-        {/* Three-Dot Menu Button */}
-        <button
-          className="folder-dots"
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
-            setSelectedFolderDropdown(
-              selectedFolderDropdown === folder.id ? null : folder.id
-            );
-            setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
-          }}
-          aria-label="Folder Options"
-        >
-          ⋮
-        </button>
-      </div>
+                  {/* Three-Dot Menu Button */}
+                  <button
+                    className="folder-dots"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
+                      setSelectedFolderDropdown(
+                        selectedFolderDropdown === folder.id ? null : folder.id
+                      );
+                      setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
+                    }}
+                    aria-label="Folder Options"
+                  >
+                    ⋮
+                  </button>
+                </div>
 
-      {/* Dropdown for Folder Actions */}
-      {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
-        <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
-          <ul>
-            <li onClick={() => handleEditFolder(folder)}>Edit</li>
-            <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
-          </ul>
-        </div>
+                {/* Dropdown for Folder Actions */}
+                {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
+                  <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
+                    <ul>
+                      <li onClick={() => handleEditFolder(folder)}>Edit</li>
+                      <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
+                    </ul>
+                  </div>
                 )}
 
                 {/* Notes List within Collection */}
@@ -1023,9 +983,8 @@ const NotesPage = () => {
                   onClick={() => {
                     setActiveNote(null);
                     setEditingNoteId(null);
-                    setEditTitle('');
                     if (editor) {
-                      editor.commands.setContent('');
+                      editor.commands.setContent('<h1></h1><p></p>'); // Reset to empty title and paragraph
                     }
                   }}
                 >

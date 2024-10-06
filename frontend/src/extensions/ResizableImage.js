@@ -9,8 +9,8 @@ const ResizableImage = Image.extend({
     return {
       ...this.parent?.(),
       width: {
-        default: '500px',
-        parseHTML: element => element.getAttribute('data-width') || '500px',
+        default: '250px',
+        parseHTML: element => element.getAttribute('data-width') || '250px',
         renderHTML: attributes => ({
           'data-width': attributes.width,
           style: `width: ${attributes.width}; height: auto;`,
@@ -33,7 +33,7 @@ const ResizableImage = Image.extend({
         getAttrs: element => {
           return {
             src: element.getAttribute('src'),
-            width: element.getAttribute('data-width') || '500px',
+            width: element.getAttribute('data-width') || '250px',
             minimized: element.getAttribute('data-minimized') === 'true',
           };
         },
@@ -71,13 +71,13 @@ const ResizableImage = Image.extend({
 
       const img = document.createElement('img');
       img.src = node.attrs.src;
-      img.style.width = node.attrs.width || '500px';
+      img.style.width = node.attrs.width || '250px';
       img.style.height = 'auto';
       img.style.display = node.attrs.minimized ? 'none' : 'block';
 
       // Placeholder when minimized
       const placeholder = document.createElement('div');
-      placeholder.style.width = node.attrs.width || '500px';
+      placeholder.style.width = node.attrs.width || '250px';
       placeholder.style.height = '50px';
       placeholder.style.display = node.attrs.minimized ? 'flex' : 'none';
       placeholder.style.alignItems = 'center';
@@ -219,9 +219,9 @@ const ResizableImage = Image.extend({
             return false;
           }
           img.src = updatedNode.attrs.src;
-          img.style.width = updatedNode.attrs.width || '500px';
+          img.style.width = updatedNode.attrs.width || '250px';
           img.style.display = updatedNode.attrs.minimized ? 'none' : 'block';
-          placeholder.style.width = updatedNode.attrs.width || '500px';
+          placeholder.style.width = updatedNode.attrs.width || '250px';
           placeholder.style.display = updatedNode.attrs.minimized ? 'flex' : 'none';
           minimizeButton.textContent = updatedNode.attrs.minimized ? '🔍' : '➖';
           return true;

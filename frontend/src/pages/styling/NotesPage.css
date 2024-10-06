@@ -374,12 +374,11 @@ body {
 
 /* Note Viewing and Editing Section */
 .note-view-section {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
+
 
 /* No Note Selected */
 .no-note-selected {
@@ -397,7 +396,42 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    align-items: center; /* Center the editor horizontally */
+    background-color: #f0f2f5; /* Set desired background color */
+    padding: 20px; /* Optional: Add padding around the editor */
 }
+
+
+/* Editor Container */
+.editor-container {
+    flex-grow: 1;
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 15px;
+    padding-left: 150px;
+    padding-right: 150px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: relative; /* For placeholder positioning */
+    max-width: 1000px; /* Limit to approximately 80 characters */
+    width: 100%;
+    margin: 0 auto; /* Center the editor */
+    min-height: 250px; /* Set a minimum height */
+    max-height: 800px; /* Optional: Set a maximum height to prevent excessive expansion */
+}
+
+
+.editor-content {
+    height: 100%;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333333;
+    white-space: pre-wrap; /* Ensure text wraps */
+    word-wrap: break-word; /* Ensure long words break */
+}
+
 
 /* Toolbar Styling */
 .toolbar {
@@ -460,34 +494,6 @@ body {
 .toolbar .image-upload-label:hover {
     background-color: #e9ecef;
     transform: scale(1.05);
-}
-
-/* Editor Container */
-.editor-container {
-    flex-grow: 1;
-    background-color: #ffffff;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
-    overflow-y: auto;
-    position: relative; /* For placeholder positioning */
-}
-
-.editor-content {
-    height: 100%;
-    outline: none;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #333333;
-}
-
-.editor-content.is-empty::before {
-    content: attr(data-placeholder);
-    color: #aaa;
-    position: absolute;
-    pointer-events: none;
-    left: 15px;
-    top: 15px;
 }
 
 /* Editor Buttons (Save and Cancel) */
@@ -619,6 +625,32 @@ body {
     background-color: #e9ecef;
 }
 
+.editor-content.is-empty::before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    position: absolute;
+    pointer-events: none;
+    left: 15px;
+    top: 15px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Placeholder for Title Input */
+.title-input.is-empty::before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    position: absolute;
+    pointer-events: none;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+
+
 /* Responsive Design */
 
 /* Mobile Styles */
@@ -669,6 +701,7 @@ body {
     /* Editor Container Padding */
     .editor-container {
         padding: 10px;
+        max-width: 80ch; /* Maintain character limit */
     }
 
     /* Save and Cancel Buttons */
@@ -717,5 +750,11 @@ body {
     .toolbar .image-upload-label {
         font-size: 13px;
         padding: 7px 11px;
+    }
+
+    /* Editor Container Padding */
+    .editor-container {
+        padding: 12px;
+        max-width: 80ch; /* Maintain character limit */
     }
 }
