@@ -32,10 +32,6 @@ import truncate from 'html-truncate';
 import DOMPurify from 'dompurify';
 import CustomHeading from '../extensions/CustomHeading';
 import CustomParagraph from '../extensions/CustomParagraph';
-import Document from '@tiptap/extension-document';
-import Text from '@tiptap/extension-text';
-import History from '@tiptap/extension-history';
-import HardBreak from '@tiptap/extension-hard-break';
 import ListItem from '@tiptap/extension-list-item';
 import OrderedList from '@tiptap/extension-ordered-list';
 import Blockquote from '@tiptap/extension-blockquote';
@@ -46,6 +42,7 @@ import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
 import { getAuth, signOut } from 'firebase/auth';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
 
 Modal.setAppElement('#root'); // Accessibility requirement for the modal
 
@@ -57,14 +54,15 @@ const NotesPage = () => {
   const [selectedFolder, setSelectedFolder] = useState('');
   const [folderName, setFolderName] = useState('');
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false); // For Folder Modal
-  const [editingNoteId, setEditingNoteId] = useState(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [initialContent, setInitialContent] = useState('');
+  const [ setEditingNoteId] = useState(null);
+  const [ setEditTitle] = useState('');
+  const [ setInitialContent] = useState('');
   const [editingFolder, setEditingFolder] = useState(null);
   const [editFolderName, setEditFolderName] = useState('');
   const titleInputRef = useRef(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const auth = getAuth();
+  const navigate = useNavigate(); // Initialize navigate
 
   // Dropdown state for folders
   const [isFolderDropdownOpen, setIsFolderDropdownOpen] = useState(false);
@@ -661,33 +659,45 @@ const NotesPage = () => {
           ☰
         </button>
 
-        {/* Profile Section */}
-        <div className="profile-section">
-          <div
-            className="profile-icon"
-            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-          >
-            {user && user.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt="Profile"
-                className="profile-picture"
-              />
-            ) : (
-              <div className="profile-placeholder">P</div>
-            )}
-          </div>
-          {isProfileDropdownOpen && (
-            <div className="profile-dropdown">
-              <ul>
-                <li onClick={() => console.log('Profile settings clicked')}>
-                  Profile Settings
-                </li>
-                <li onClick={handleLogout}>Logout</li>
-              </ul>
-            </div>
-          )}
-        </div>
+{/* Profile Section */}
+<div className="profile-section">
+  <div
+    className="profile-icon"
+    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+  >
+    {user && user.photoURL ? (
+      <img
+        src={user.photoURL}
+        alt="Profile"
+        className="profile-picture"
+      />
+    ) : (
+      <div className="profile-placeholder">P</div>
+    )}
+  </div>
+  {isProfileDropdownOpen && (
+    <div className="profile-dropdown">
+      <ul>
+        <li
+          onClick={() => {
+            setIsProfileDropdownOpen(false); // Close dropdown
+            navigate('/profile'); // Navigate to the profile page
+          }}
+        >
+          Profile Settings
+        </li>
+        <li
+          onClick={() => {
+            setIsProfileDropdownOpen(false); // Close dropdown
+            handleLogout(); // Call the logout function
+          }}
+        >
+          Logout
+        </li>
+      </ul>
+    </div>
+  )}
+</div>
 
         {/* Collections Sidebar */}
         <div className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
