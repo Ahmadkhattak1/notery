@@ -54,9 +54,10 @@ const NotesPage = () => {
   const [selectedFolder, setSelectedFolder] = useState('');
   const [folderName, setFolderName] = useState('');
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false); // For Folder Modal
-  const [ setEditingNoteId] = useState(null);
-  const [ setEditTitle] = useState('');
-  const [ setInitialContent] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [initialContent, setInitialContent] = useState('');
+  
   const [editingFolder, setEditingFolder] = useState(null);
   const [editFolderName, setEditFolderName] = useState('');
   const titleInputRef = useRef(null);

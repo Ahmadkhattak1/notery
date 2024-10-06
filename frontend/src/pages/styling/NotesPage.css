@@ -1,6 +1,11 @@
 /* Import Poppins Font */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
+/* Global Box-Sizing Reset */
+* {
+    box-sizing: border-box;
+}
+
 /* Global Styles for Notes Page */
 body {
     font-family: 'Poppins', sans-serif;
@@ -32,10 +37,10 @@ body {
     font-size: 24px;
     cursor: pointer;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    display: flex;
+    display: none; /* Hidden by default, shown on smaller screens */
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 2000; /* Increased z-index to appear above the sidebar */
     transition: transform 0.3s ease;
 }
 
@@ -48,50 +53,55 @@ body {
 .collections-sidebar {
     width: 300px;
     background-color: #ffffff;
-    border-radius: 20px;
+    border-radius: 10px;
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
     padding: 20px;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease, width 0.3s ease;
-    overflow-y: auto; /* Ensure vertical scroll if content overflows */
-    max-height: 100vh; /* Prevent exceeding viewport height */
-    overflow-x: hidden;
+    transition: transform 0.3s ease-in-out, width 0.3s ease;
     overflow-y: auto;
+    max-height: 100vh;
     box-sizing: border-box;
+    position: relative;
+    z-index: 1000; /* Ensure sidebar is below the toggle button */
 }
 
+/* Sidebar Closed State (for smaller screens) */
 .collections-sidebar.closed {
     transform: translateX(-100%);
     width: 0;
     padding: 0;
 }
 
+/* Sidebar Open State (for smaller screens) */
+.collections-sidebar.open {
+    transform: translateX(0);
+}
+
+/* Sidebar Heading */
 .collections-sidebar h2 {
     font-size: 24px;
     font-weight: 700;
-    margin-top: 40px;  /* Added top margin to move the text down and prevent overlap with hamburger */
+    margin-top: 40px; /* Added top margin to prevent overlap with hamburger */
     margin-bottom: 20px;
     color: #2193b0;
-    text-align: left;  /* Align heading to the left */
+    text-align: left;
 }
-
 
 /* Add Collection Button */
 .add-folder-button {
-    background-color: rgb(227, 242, 253);  /* Soft blue color for subtle visibility */
-    color: #1976d2;  /* Darker blue text for contrast */
+    background-color: rgb(227, 242, 253); /* Soft blue color for subtle visibility */
+    color: #1976d2; /* Darker blue text for contrast */
     border: none;
-    border-radius: 10px;  /* Rounded corners for a smooth look */
-    padding: 10px 20px;  /* More padding for a larger clickable area */
-    font-size: 15px;  /* Comfortable font size */
+    border-radius: 10px; /* Rounded corners for a smooth look */
+    padding: 10px 20px; /* More padding for a larger clickable area */
+    font-size: 15px; /* Comfortable font size */
     cursor: pointer;
-    font-weight: 600;  /* Medium weight for a modern appearance */
+    font-weight: 600; /* Medium weight for a modern appearance */
     transition: background-color 0.1s ease, transform 0.1s ease;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);  /* Subtle shadow for slight depth */
-    margin-bottom: 20px;  /* Space below the button for separation */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow for slight depth */
+    margin-bottom: 20px; /* Space below the button for separation */
 }
-
 
 .add-folder-button:hover {
     background-color: #cdf0ff;
@@ -106,13 +116,16 @@ body {
     overflow-y: auto;
 }
 
-/* Prevent horizontal overflow */
-.collections-sidebar, .folders-list, .folder-item, .folder-header, .notes-list, .note-title-item {
+/* Prevent Horizontal Overflow */
+.collections-sidebar,
+.folders-list,
+.folder-item,
+.folder-header,
+.notes-list,
+.note-title-item {
     box-sizing: border-box;
     max-width: 100%;
-    box-sizing: border-box;
-    word-wrap: break-word; /* Break long words to prevent overflow */
-
+    word-wrap: break-word; /* Prevent overflow by breaking long words */
 }
 
 /* Folder Item */
@@ -126,44 +139,41 @@ body {
 /* Folder Header */
 .folder-header {
     display: flex;
-    align-items: center;  /* Vertically center all items */
+    align-items: center; /* Vertically center all items */
     padding: 10px 15px;
     background-color: #f8f9fa;
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
     position: relative;
-    gap: 10px;  /* Spacing between elements */
+    gap: 10px; /* Spacing between elements */
 }
-
-
 
 .folder-header:hover {
     background-color: #e9ecef;
 }
 
-/* Folder Name and Toggle Wrapper */
+/* Folder Header Content Wrapper */
 .folder-header-content {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Space between folder name, dots, and add note button */
-  flex-grow: 1; /* Take up available space */
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between folder name, dots, and add note button */
+    flex-grow: 1; /* Take up available space */
 }
 
 /* Folder Name */
 .folder-name {
-    flex-grow: 1;  /* Takes up available space */
-    font-size: 16px;  /* Slightly larger for readability */
-    font-weight: 500;  /* Medium weight for a clean look */
-    color: #1a1a1a;  /* Darker gray for improved contrast */
-    white-space: nowrap;  /* Prevent wrapping */
-    overflow: hidden;  /* Hide overflow text */
-    text-overflow: ellipsis;  /* Ellipsis for long text */
-    margin-left: 5px;  /* Add slight margin to create space between the arrow and the text */
+    flex-grow: 1; /* Takes up available space */
+    font-size: 16px; /* Slightly larger for readability */
+    font-weight: 500; /* Medium weight for a clean look */
+    color: #1a1a1a; /* Darker gray for improved contrast */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Ellipsis for long text */
+    margin-left: 5px; /* Space between arrow and text */
 }
 
-
-/* Folder Toggle */
+/* Folder Toggle Icon */
 .folder-toggle {
     font-size: 18px;
     color: #333333;
@@ -172,35 +182,34 @@ body {
     margin-right: 10px; /* Space after the arrow */
 }
 
-
-
 .folder-toggle.rotate {
     transform: rotate(180deg);
 }
 
-/* Folder Dropdown (3-Dot Menu) */
-.folder-dots, .note-dots {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: #555555;
-  display: flex;
-  align-items: left;  /* Vertically center the dots within the container */
-  justify-content: left;  /* Center content inside the button */
-  margin-left: 5px; /* Small space between the collection name and the dots */
-  vertical-align: left;  /* Align dots vertically with text */
-   /* Remove any padding that might push it out of place */
-
-
+/* Folder and Note Dots Menu */
+.folder-dots,
+.note-dots {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #555555;
+    display: flex;
+    align-items: center; /* Vertically center the dots */
+    justify-content: center;
+    margin-left: 5px; /* Small space between name and dots */
+    vertical-align: middle;
+    padding: 0; /* Remove default padding */
 }
 
-.folder-dots:hover, .note-dots:hover {
+.folder-dots:hover,
+.note-dots:hover {
     color: #2193b0;
 }
 
-/* Folder Actions Dropdown */
-.folder-dropdown-container, .note-dropdown-container {
+/* Dropdown Containers */
+.folder-dropdown-container,
+.note-dropdown-container {
     position: absolute;
     top: 40px;
     right: 10px;
@@ -208,27 +217,31 @@ body {
     border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+    z-index: 100; /* Lower than toggle button */
     display: none;
 }
 
-.folder-dropdown-container.show-dropdown, .note-dropdown-container.show-dropdown {
+.folder-dropdown-container.show-dropdown,
+.note-dropdown-container.show-dropdown {
     display: block;
 }
 
-.folder-dropdown-container ul, .note-dropdown-container ul {
+.folder-dropdown-container ul,
+.note-dropdown-container ul {
     list-style: none;
     margin: 0;
     padding: 10px 0;
 }
 
-.folder-dropdown-container li, .note-dropdown-container li {
+.folder-dropdown-container li,
+.note-dropdown-container li {
     padding: 10px 20px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-.folder-dropdown-container li:hover, .note-dropdown-container li:hover {
+.folder-dropdown-container li:hover,
+.note-dropdown-container li:hover {
     background-color: #f1f1f1;
 }
 
@@ -247,7 +260,7 @@ body {
     justify-content: center;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease, transform 0.3s ease;
-    margin-right: 10px;  /* Space between the add note button and the dots */
+    margin-right: 10px; /* Space between add note button and dots */
 }
 
 .add-note-icon:hover {
@@ -399,7 +412,8 @@ body {
     margin-bottom: 10px;
 }
 
-.toolbar button, .toolbar select {
+.toolbar button,
+.toolbar select {
     background-color: #f8f9fa;
     border: none;
     padding: 8px 12px;
@@ -409,7 +423,8 @@ body {
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.toolbar button:hover, .toolbar select:hover {
+.toolbar button:hover,
+.toolbar select:hover {
     background-color: #e9ecef;
     transform: scale(1.05);
 }
@@ -482,7 +497,8 @@ body {
     margin-top: 15px;
 }
 
-.save-button, .cancel-button {
+.save-button,
+.cancel-button {
     padding: 10px 20px;
     border: none;
     border-radius: 30px;
@@ -513,50 +529,50 @@ body {
 
 /* Modal Styling */
 .ReactModal__Overlay {
-  background-color: rgba(0, 0, 0, 0.5) !important; /* Semi-transparent dark background */
-  display: flex; /* To center content */
-  align-items: center; /* Vertically center the modal */
-  justify-content: center; /* Horizontally center the modal */
-  z-index: 2000; /* Ensure it appears on top of other content */
-  position: fixed; /* Stay fixed on the screen */
-  top: 0; /* Fullscreen modal effect */
-  left: 0;
-  right: 0;
-  bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5) !important; /* Semi-transparent dark background */
+    display: flex; /* To center content */
+    align-items: center; /* Vertically center the modal */
+    justify-content: center; /* Horizontally center the modal */
+    z-index: 2000; /* Ensure it appears on top of other content */
+    position: fixed; /* Stay fixed on the screen */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 /* Actual Modal Content */
 .modal-content {
-  background-color: #ffffff; /* Modal background color */
-  padding: 30px; /* Inner padding */
-  border-radius: 20px; /* Rounded corners */
-  width: 90%; /* Adaptive width */
-  max-width: 400px; /* Limits modal width */
-  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2); /* Drop shadow for better focus */
-  position: relative; /* So any inner elements are positioned relative to this */
-  transform: scale(1); /* Ensure no scaling issues */
-  animation: modalFadeIn 0.3s ease-in-out; /* Add a fade-in effect */
+    background-color: #ffffff; /* Modal background color */
+    padding: 30px; /* Inner padding */
+    border-radius: 20px; /* Rounded corners */
+    width: 90%; /* Adaptive width */
+    max-width: 400px; /* Limits modal width */
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2); /* Drop shadow for better focus */
+    position: relative; /* So any inner elements are positioned relative to this */
+    transform: scale(1); /* Ensure no scaling issues */
+    animation: modalFadeIn 0.3s ease-in-out; /* Add a fade-in effect */
 }
 
 /* Modal Title */
 .modal-content h2 {
-  margin-top: 0; /* No extra margin at the top */
-  color: #2193b0; /* Title color */
-  font-size: 24px; /* Font size */
-  font-weight: 700; /* Bold text */
-  margin-bottom: 20px; /* Space below the title */
+    margin-top: 0; /* No extra margin at the top */
+    color: #2193b0; /* Title color */
+    font-size: 24px; /* Font size */
+    font-weight: 700; /* Bold text */
+    margin-bottom: 20px; /* Space below the title */
 }
 
-/* Animation for smooth fade-in */
+/* Animation for Smooth Fade-In */
 @keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .folder-modal-content {
@@ -607,25 +623,29 @@ body {
 
 /* Mobile Styles */
 @media (max-width: 768px) {
+    /* Show Hamburger Icon */
+    .sidebar-toggle-button {
+        display: flex; /* Show hamburger button */
+    }
+
+    /* Adjust Collections Sidebar for Mobile */
     .collections-sidebar {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         height: 100%;
-        z-index: 1500;
-        width: 80%; /* Adjusted width for better fit */
+        width: 300px;
+        transform: translateX(-100%); /* Hidden by default */
+        transition: transform 0.3s ease-in-out;
+        z-index: 1500; /* Below the toggle button */
     }
 
-    .sidebar-toggle-button {
-        display: block;
+    .collections-sidebar.open {
+        transform: translateX(0); /* Slide into view when open */
     }
 
-    .notes-container.sidebar-closed .collections-sidebar {
-        transform: translateX(-100%);
-    }
-
-    .notes-container.sidebar-open .collections-sidebar {
-        transform: translateX(0);
+    .collections-sidebar.closed {
+        transform: translateX(-100%); /* Ensure it's hidden when closed */
     }
 
     /* Profile Section Adjustment */
@@ -639,7 +659,9 @@ body {
         flex-wrap: wrap;
     }
 
-    .toolbar button, .toolbar select, .toolbar .image-upload-label {
+    .toolbar button,
+    .toolbar select,
+    .toolbar .image-upload-label {
         font-size: 12px;
         padding: 6px 10px;
     }
@@ -655,36 +677,44 @@ body {
         align-items: stretch;
     }
 
-    .save-button, .cancel-button {
+    .save-button,
+    .cancel-button {
         width: 100%;
     }
 }
 
 /* Tablet Styles */
 @media (min-width: 769px) and (max-width: 1024px) {
+    /* Adjust Sidebar Width for Tablets */
     .collections-sidebar {
         width: 250px;
     }
 
+    /* Adjust Sidebar Heading Font Size */
     .collections-sidebar h2 {
         font-size: 22px;
     }
 
+    /* Adjust Add Folder Button Size */
     .add-folder-button {
-        width: 35px;
-        height: 35px;
-        font-size: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
     }
 
+    /* Adjust Folder Name Font Size */
     .folder-name {
         font-size: 16px;
     }
 
+    /* Adjust Note Title Font Size */
     .note-title {
         font-size: 15px;
     }
 
-    .toolbar button, .toolbar select, .toolbar .image-upload-label {
+    /* Toolbar Adjustments for Tablet */
+    .toolbar button,
+    .toolbar select,
+    .toolbar .image-upload-label {
         font-size: 13px;
         padding: 7px 11px;
     }
