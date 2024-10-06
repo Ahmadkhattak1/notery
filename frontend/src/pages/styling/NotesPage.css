@@ -70,29 +70,31 @@ body {
 .collections-sidebar h2 {
     font-size: 24px;
     font-weight: 700;
+    margin-top: 40px;  /* Added top margin to move the text down and prevent overlap with hamburger */
     margin-bottom: 20px;
     color: #2193b0;
-    text-align: left; /* Align heading to the left */
+    text-align: left;  /* Align heading to the left */
 }
+
 
 /* Add Collection Button */
 .add-folder-button {
-    background-color: #2193b0;
-    color: #ffffff;
+    background-color: rgb(227, 242, 253);  /* Soft blue color for subtle visibility */
+    color: #1976d2;  /* Darker blue text for contrast */
     border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
+    border-radius: 10px;  /* Rounded corners for a smooth look */
+    padding: 10px 20px;  /* More padding for a larger clickable area */
+    font-size: 15px;  /* Comfortable font size */
     cursor: pointer;
-    align-self: flex-end;
-    margin-bottom: 20px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-weight: 600;  /* Medium weight for a modern appearance */
+    transition: background-color 0.1s ease, transform 0.1s ease;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);  /* Subtle shadow for slight depth */
+    margin-bottom: 20px;  /* Space below the button for separation */
 }
 
+
 .add-folder-button:hover {
-    background-color: #1a78a0;
-    transform: scale(1.05);
+    background-color: #cdf0ff;
 }
 
 /* Folders List */
@@ -123,17 +125,17 @@ body {
 
 /* Folder Header */
 .folder-header {
-  display: flex;
-  align-items: center;  /* Vertically center all items */
-  justify-content: flex-start;  /* Align items from left to right */
-  padding: 10px 15px;
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  gap: 15px; /* Provide space between elements */
-  position: relative;
+    display: flex;
+    align-items: center;  /* Vertically center all items */
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    position: relative;
+    gap: 10px;  /* Spacing between elements */
 }
+
 
 
 .folder-header:hover {
@@ -150,20 +152,27 @@ body {
 
 /* Folder Name */
 .folder-name {
-  flex-grow: 1;  /* Allow the name to take up all the available space */
-  font-size: 14px;
-  font-weight: 600;
-  color: #333333;
-  white-space: nowrap;  /* Prevent the name from wrapping */
-  overflow: hidden;  /* Hide overflow text */
-  text-overflow: ellipsis;  /* Show ellipsis for overflow text */
+    flex-grow: 1;  /* Takes up available space */
+    font-size: 16px;  /* Slightly larger for readability */
+    font-weight: 500;  /* Medium weight for a clean look */
+    color: #1a1a1a;  /* Darker gray for improved contrast */
+    white-space: nowrap;  /* Prevent wrapping */
+    overflow: hidden;  /* Hide overflow text */
+    text-overflow: ellipsis;  /* Ellipsis for long text */
+    margin-left: 5px;  /* Add slight margin to create space between the arrow and the text */
 }
+
 
 /* Folder Toggle */
 .folder-toggle {
+    font-size: 18px;
+    color: #333333;
+    cursor: pointer;
     transition: transform 0.3s ease;
-    margin-left: 5px;
+    margin-right: 10px; /* Space after the arrow */
 }
+
+
 
 .folder-toggle.rotate {
     transform: rotate(180deg);
@@ -225,20 +234,20 @@ body {
 
 /* Add Note Icon within Collection */
 .add-note-icon {
-  background-color: #2193b0;
-  color: #ffffff;
-  border: none;
-  border-radius: 50%;
-  width: 25px;
-  height: 25px;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease, transform 0.3s ease;
-  margin-right: 10px;  /* Add space between the add note button and the three-dot menu */
+    background-color: #2193b0;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    margin-right: 10px;  /* Space between the add note button and the dots */
 }
 
 .add-note-icon:hover {

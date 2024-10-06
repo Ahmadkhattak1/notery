@@ -375,7 +375,7 @@ const NotesPage = () => {
     setEditingNoteId(null);
     setEditTitle('');
     if (editor) {
-      editor.commands.setContent('<h1></h1>'); // Initialize with an empty heading and paragraph
+      editor.commands.setContent('<h1></h1>'); // Initialize with an empty heading
     }
   };
 
@@ -703,60 +703,63 @@ const NotesPage = () => {
             }}
             title="Add Collection"
           >
-            +
+            Add Collection
           </button>
 
           <ul className="folders-list">
-            {folders.map((folder) => (
-              <li key={folder.id} className="folder-item">
-                <div
-                  className="folder-header"
-                  onClick={() =>
-                    setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)
-                  }
-                >
-                  <span className="folder-name">{folder.name}</span>
-                  <span className={`folder-toggle ${selectedFolder === folder.id ? 'rotate' : ''}`}>
-                    ▼
-                  </span>
-                </div>
-                {/* 3-Dot Dropdown */}
-                <button
-                  className="folder-dots"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFolderDropdown(
-                      selectedFolderDropdown === folder.id ? null : folder.id
-                    );
-                    setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
-                  }}
-                  aria-label="Folder Options"
-                >
-                  ⋮
-                </button>
+  {folders.map((folder) => (
+    <li key={folder.id} className="folder-item">
+      {/* Folder Header Container */}
+      <div
+        className="folder-header"
+        onClick={() => setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)}
+      >
+        {/* Folder Toggle Arrow (at the far left) */}
+        <span className="folder-toggle">
+          {selectedFolder === folder.id ? '▼' : '▲'}
+        </span>
 
-                {/* Dropdown for Folder Actions */}
-                {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
-                  <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
-                    <ul>
-                      <li onClick={() => handleEditFolder(folder)}>Edit</li>
-                      <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
-                    </ul>
-                  </div>
+        {/* Folder Name */}
+        <span className="folder-name">{folder.name}</span>
+
+        {/* Plus Icon for Adding Note within Collection */}
+        <button
+          className="add-note-icon"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
+            handleAddNote(); // Open the editor for a new note
+            setSelectedFolder(folder.id);
+          }}
+          title="Add Note"
+        >
+          +
+        </button>
+
+        {/* Three-Dot Menu Button */}
+        <button
+          className="folder-dots"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering folder toggle when clicking this button
+            setSelectedFolderDropdown(
+              selectedFolderDropdown === folder.id ? null : folder.id
+            );
+            setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
+          }}
+          aria-label="Folder Options"
+        >
+          ⋮
+        </button>
+      </div>
+
+      {/* Dropdown for Folder Actions */}
+      {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
+        <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
+          <ul>
+            <li onClick={() => handleEditFolder(folder)}>Edit</li>
+            <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
+          </ul>
+        </div>
                 )}
-
-                {/* Plus Icon for Adding Note within Collection */}
-                <button
-                  className="add-note-icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddNote(); // Open the editor for a new note
-                    setSelectedFolder(folder.id);
-                  }}
-                  title="Add Note"
-                >
-                  +
-                </button>
 
                 {/* Notes List within Collection */}
                 {selectedFolder === folder.id && (
