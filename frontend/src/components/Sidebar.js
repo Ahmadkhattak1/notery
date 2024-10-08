@@ -3,37 +3,42 @@
 import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 
-const Sidebar = ({
-  folders,
-  handleEditFolder,
-  handleDeleteFolder,
-  handleAddNote,
-  openAddFolderModal, // Receive the function as a prop
-  openNote,
-  notes,
-  activeNote,
-  selectedFolder,
-  setSelectedFolder,
-  isFolderDropdownOpen,
-  setIsFolderDropdownOpen,
-  selectedFolderDropdown,
-  setSelectedFolderDropdown,
-  isSidebarOpen,
-  setIsSidebarOpen,
-  selectedNoteDropdown,
-  setSelectedNoteDropdown,
-  isNoteDropdownOpen,
-  setIsNoteDropdownOpen,
-  handleDeleteNote,
-}) => {
+const Sidebar = React.forwardRef((props, ref) => {
+  const {
+    folders,
+    handleEditFolder,
+    handleDeleteFolder,
+    handleAddNote,
+    openAddFolderModal,
+    openNote,
+    notes,
+    activeNote,
+    selectedFolder,
+    setSelectedFolder,
+    isFolderDropdownOpen,
+    setIsFolderDropdownOpen,
+    selectedFolderDropdown,
+    setSelectedFolderDropdown,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    selectedNoteDropdown,
+    setSelectedNoteDropdown,
+    isNoteDropdownOpen,
+    setIsNoteDropdownOpen,
+    handleDeleteNote,
+  } = props;
+
   return (
-    <div className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+    <div
+      ref={ref}
+      className={`collections-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+    >
       <h2>Collections</h2>
       {/* Add Folder Modal Trigger */}
       <button
         className="add-folder-button"
         onClick={() => {
-          openAddFolderModal(); // Use the function to open the modal
+          openAddFolderModal();
         }}
         title="Add Collection"
       >
@@ -91,8 +96,22 @@ const Sidebar = ({
             {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
               <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
                 <ul>
-                  <li onClick={() => handleEditFolder(folder)}>Edit</li>
-                  <li onClick={() => handleDeleteFolder(folder.id)}>Delete</li>
+                  <li
+                    onClick={() => {
+                      handleEditFolder(folder);
+                      setIsFolderDropdownOpen(false);
+                    }}
+                  >
+                    Edit
+                  </li>
+                  <li
+                    onClick={() => {
+                      handleDeleteFolder(folder.id);
+                      setIsFolderDropdownOpen(false);
+                    }}
+                  >
+                    Delete
+                  </li>
                 </ul>
               </div>
             )}
@@ -109,7 +128,11 @@ const Sidebar = ({
                     {notes
                       .filter((note) => note.folderId === folder.id)
                       .map((note, index) => (
-                        <Draggable key={note.id} draggableId={note.id} index={index}>
+                        <Draggable
+                          key={note.id || `new-${index}`}
+                          draggableId={note.id || `new-${index}`}
+                          index={index}
+                        >
                           {(provided) => (
                             <li
                               className={`note-title-item ${
@@ -125,7 +148,7 @@ const Sidebar = ({
                                 className="note-title"
                                 onClick={() => openNote(note)}
                               >
-                                {note.title}
+                                {note.title || 'Untitled Note'}
                               </span>
                               {/* 3-Dot Dropdown for Notes */}
                               <button
@@ -149,11 +172,18 @@ const Sidebar = ({
                                 selectedNoteDropdown === note.id && (
                                   <div className="note-dropdown-container note-management-dropdown show-dropdown">
                                     <ul>
-                                      <li onClick={() => openNote(note)}>Edit</li>
+                                      <li
+                                        onClick={() => {
+                                          openNote(note);
+                                          setIsNoteDropdownOpen(false);
+                                        }}
+                                      >
+                                        Edit
+                                      </li>
                                       <li
                                         onClick={() => {
                                           handleDeleteNote(note.id);
-                                          setIsNoteDropdownOpen(false); // Close dropdown after action
+                                          setIsNoteDropdownOpen(false);
                                         }}
                                       >
                                         Delete
@@ -175,6 +205,6 @@ const Sidebar = ({
       </ul>
     </div>
   );
-};
+});
 
 export default Sidebar;

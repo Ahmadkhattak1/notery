@@ -30,13 +30,11 @@ const ResizableImage = Image.extend({
     return [
       {
         tag: 'img[data-resizable-image]',
-        getAttrs: element => {
-          return {
-            src: element.getAttribute('src'),
-            width: element.getAttribute('data-width') || '250px',
-            minimized: element.getAttribute('data-minimized') === 'true',
-          };
-        },
+        getAttrs: element => ({
+          src: element.getAttribute('src'),
+          width: element.getAttribute('data-width') || '250px',
+          minimized: element.getAttribute('data-minimized') === 'true',
+        }),
       },
     ];
   },
@@ -61,11 +59,7 @@ const ResizableImage = Image.extend({
       wrapper.style.display = 'block';
       wrapper.style.margin = '10px 0';
 
-      // Add spacing above the image
-      const spacerTop = document.createElement('div');
-      spacerTop.style.height = '1em';
-      wrapper.appendChild(spacerTop);
-
+      // Content container
       const content = document.createElement('div');
       content.style.position = 'relative';
       content.style.display = 'inline-block';
@@ -224,11 +218,6 @@ const ResizableImage = Image.extend({
       content.appendChild(resizeHandle);
 
       wrapper.appendChild(content);
-
-      // Add spacing below the image and place the cursor there
-      const spacerBottom = document.createElement('div');
-      spacerBottom.style.height = '1em';
-      wrapper.appendChild(spacerBottom);
 
       return {
         dom: wrapper,

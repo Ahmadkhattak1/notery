@@ -92,6 +92,13 @@ const NotesPage = () => {
   // State to track the active note
   const [activeNote, setActiveNote] = useState(null);
 
+  // Online/offline status
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [offlineQueue, setOfflineQueue] = useState([]);
+
+  // Ref to the sidebar element
+  const sidebarRef = useRef(null);
+
   // Handler to edit a folder
   const handleEditFolder = (folder) => {
     setEditingFolder(folder);
@@ -115,17 +122,28 @@ const NotesPage = () => {
     // Generate a new note object
     const newNote = {
       id: null, // Will be set after saving to Firestore
-      title: '',
-      content: '',
+      title: 'Untitled Note',
+      content: '<h1></h1><p></p>', // Empty content
       folderId: selectedFolder || null,
       userId: user.uid,
       createdAt: null,
       updatedAt: null,
+      isNew: true, // Custom flag to indicate it's a new note not yet saved
     };
 
     setActiveNote(newNote);
-    editor.commands.setContent('<h1></h1><p></p>'); // Initialize with empty title and paragraph
-    console.log('New note initialized.');
+
+    // Add the new note to the local notes array to display in the sidebar
+    setNotes((prevNotes) => [newNote, ...prevNotes]);
+
+    // Set the editor content to empty
+    editor.commands.setContent('<h1></h1><p></p>');
+    console.log('New untitled note initialized.');
+
+    // On smaller screens, close the sidebar after adding a note
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
   };
 
   // Function to handle adding a new folder
@@ -291,10 +309,10 @@ const NotesPage = () => {
               editor.commands.sinkListItem('listItem');
             }
           } else {
-            // For regular paragraphs, insert a tab character
+            // For regular paragraphs, insert spaces to simulate a tab
             editor.commands.command(({ tr, state }) => {
               const { selection } = state;
-              tr.insertText('\t', selection.from, selection.to);
+              tr.insertText('\u00A0\u00A0\u00A0\u00A0', selection.from, selection.to);
               return true;
             });
           }
@@ -358,7 +376,7 @@ const NotesPage = () => {
         }
       };
     }
-  }, [editor, activeNote]); // Added activeNote to dependencies
+  }, [editor, activeNote]);
 
   // Enhanced error logging and authentication check
   const handleSaveNote = async () => {
@@ -395,66 +413,89 @@ const NotesPage = () => {
     console.log('Determined title:', title);
 
     // Check if content is empty
-    if (!htmlContent.trim()) {
-      // If content is empty and it's a new note, do not save
-      if (!activeNote || !activeNote.id) {
-        console.log('Active note is new and empty. Not saving.');
-        return;
+    const isContentEmpty = tempDiv.textContent.trim() === '';
+    if (isContentEmpty) {
+      // Remove the note from local state if it's empty
+      if (activeNote && activeNote.isNew) {
+        setNotes((prevNotes) => prevNotes.filter((note) => note !== activeNote));
+        setActiveNote(null);
+        editor.commands.setContent('<h1></h1><p></p>');
+        console.log('New empty note discarded.');
+      } else if (activeNote && activeNote.id) {
+        // If content is empty and it's an existing note, delete it without confirmation
+        console.log('Active note exists but content is empty. Deleting note:', activeNote.id);
+        await handleDeleteNote(activeNote.id, false);
       }
-      // If content is empty and it's an existing note, delete it without confirmation
-      console.log('Active note exists but content is empty. Deleting note:', activeNote.id);
-      await handleDeleteNote(activeNote.id, false);
       return;
     }
 
-    try {
-      if (activeNote && activeNote.id) {
-        // Editing an existing note
-        const noteRef = doc(db, 'notes', activeNote.id);
-        await updateDoc(noteRef, {
-          title: title,
-          content: htmlContent,
-          updatedAt: serverTimestamp(),
-        });
-        console.log('Existing note updated:', activeNote.id);
+    const saveNoteToFirestore = async () => {
+      try {
+        if (activeNote && activeNote.id) {
+          // Editing an existing note
+          const noteRef = doc(db, 'notes', activeNote.id);
+          await updateDoc(noteRef, {
+            title: title,
+            content: htmlContent,
+            updatedAt: serverTimestamp(),
+          });
+          console.log('Existing note updated:', activeNote.id);
 
-        // Update the activeNote state
-        const updatedNote = {
-          ...activeNote,
-          title,
-          content: htmlContent,
-          updatedAt: new Date(), // Approximate client-side timestamp
-        };
-        setActiveNote(updatedNote);
-      } else {
-        // Adding a new note
-        const docRef = await addDoc(collection(db, 'notes'), {
-          title: title,
-          content: htmlContent,
-          folderId: selectedFolder || null,
-          userId: user.uid,
-          createdAt: serverTimestamp(),
-          updatedAt: null,
-        });
-        console.log('New note added with ID:', docRef.id);
+          // Update the activeNote state
+          const updatedNote = {
+            ...activeNote,
+            title,
+            content: htmlContent,
+            updatedAt: new Date(), // Approximate client-side timestamp
+            isNew: false,
+          };
+          setActiveNote(updatedNote);
 
-        // Create a new note object
-        const createdNote = {
-          id: docRef.id,
-          title,
-          content: htmlContent,
-          folderId: selectedFolder || null,
-          userId: user.uid,
-          createdAt: new Date(), // Approximate client-side timestamp
-          updatedAt: null,
-        };
+          // Update the note in the local notes array
+          setNotes((prevNotes) =>
+            prevNotes.map((note) => (note.id === activeNote.id ? updatedNote : note))
+          );
+        } else {
+          // Adding a new note
+          const docRef = await addDoc(collection(db, 'notes'), {
+            title: title,
+            content: htmlContent,
+            folderId: selectedFolder || null,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+            updatedAt: null,
+          });
+          console.log('New note added with ID:', docRef.id);
 
-        // Set the new note as active
-        setActiveNote(createdNote);
+          // Create a new note object
+          const createdNote = {
+            ...activeNote,
+            id: docRef.id,
+            title,
+            content: htmlContent,
+            createdAt: new Date(),
+            isNew: false, // Note is now saved
+          };
+
+          // Update the activeNote and notes array
+          setActiveNote(createdNote);
+          setNotes((prevNotes) =>
+            prevNotes.map((note) => (note === activeNote ? createdNote : note))
+          );
+        }
+      } catch (error) {
+        console.error('Error saving note:', error.message, error.code, error);
+        alert('Failed to save the note. Please try again.');
       }
-    } catch (error) {
-      console.error('Error saving note:', error.message, error.code, error);
-      alert('Failed to save the note. Please try again.');
+    };
+
+    if (isOnline) {
+      // If online, save immediately
+      await saveNoteToFirestore();
+    } else {
+      // If offline, queue the save action
+      setOfflineQueue((prevQueue) => [...prevQueue, saveNoteToFirestore]);
+      console.log('Save action queued due to offline status.');
     }
   };
 
@@ -464,6 +505,11 @@ const NotesPage = () => {
     if (editor) {
       editor.commands.setContent(note.content);
       console.log('Opened note:', note.id);
+    }
+
+    // On smaller screens, close the sidebar after selecting a note
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
     }
   };
 
@@ -483,6 +529,8 @@ const NotesPage = () => {
           console.log('Editor content reset after deletion.');
         }
       }
+      // Remove the note from the local notes array
+      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
     } catch (error) {
       console.error('Error deleting note:', error.message, error.code, error);
       alert('Failed to delete the note. Please try again.');
@@ -506,7 +554,12 @@ const NotesPage = () => {
       const notesData = snapshot.docs
         .filter((doc) => doc.data().userId === user.uid)
         .map((doc) => ({ id: doc.id, ...doc.data() }));
-      setNotes(notesData);
+
+      // Merge with any unsaved notes
+      setNotes((prevNotes) => {
+        const unsavedNotes = prevNotes.filter((note) => !note.id);
+        return [...unsavedNotes, ...notesData];
+      });
     });
 
     return () => {
@@ -514,6 +567,89 @@ const NotesPage = () => {
       unsubscribeNotes();
     };
   }, [user]);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      console.log('Back online.');
+      // Process any queued actions
+      if (offlineQueue.length > 0) {
+        offlineQueue.forEach((action) => action());
+        setOfflineQueue([]);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      console.log('Offline.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [offlineQueue]);
+
+  // Close dropdowns and sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close folder dropdown if clicking outside
+      if (
+        isFolderDropdownOpen &&
+        !event.target.closest('.folder-dropdown-container') &&
+        !event.target.closest('.folder-item')
+      ) {
+        setIsFolderDropdownOpen(false);
+        setSelectedFolderDropdown(null);
+      }
+
+      // Close note dropdown if clicking outside
+      if (
+        isNoteDropdownOpen &&
+        !event.target.closest('.note-dropdown-container') &&
+        !event.target.closest('.note-item')
+      ) {
+        setIsNoteDropdownOpen(false);
+        setSelectedNoteDropdown(null);
+      }
+
+      // Close profile dropdown if clicking outside
+      if (
+        isProfileDropdownOpen &&
+        !event.target.closest('.profile-dropdown') &&
+        !event.target.closest('.profile-icon')
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+
+      // Close sidebar if clicking outside and sidebar is open and on small screen
+      if (
+        isSidebarOpen &&
+        window.innerWidth <= 768 &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target) &&
+        !event.target.closest('.sidebar-toggle-button')
+      ) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [
+    isFolderDropdownOpen,
+    isNoteDropdownOpen,
+    isProfileDropdownOpen,
+    isSidebarOpen,
+    sidebarRef,
+  ]);
 
   // Image upload handlers
   const handleImageUpload = async (event) => {
@@ -526,7 +662,7 @@ const NotesPage = () => {
       editor
         .chain()
         .focus()
-        .setImage({ src: url, width: 'auto', height: 'auto', 'data-resizable-image': '' })
+        .setImage({ src: url, width: '250px', height: 'auto', 'data-resizable-image': '' })
         .run();
       console.log('Image uploaded:', url);
     };
@@ -547,7 +683,7 @@ const NotesPage = () => {
       editor
         .chain()
         .focus()
-        .setImage({ src: url, width: 'auto', height: 'auto', 'data-resizable-image': '' })
+        .setImage({ src: url, width: '250px', height: 'auto', 'data-resizable-image': '' })
         .run();
       console.log('Camera image captured:', url);
     };
@@ -596,6 +732,13 @@ const NotesPage = () => {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="notes-container">
+        {/* Internet Connectivity Alert */}
+        {!isOnline && (
+          <div className="offline-alert">
+            <p>You are offline. Changes will be saved when the connection is restored.</p>
+          </div>
+        )}
+
         {/* Hamburger Icon for Sidebar Toggle */}
         <button
           className="sidebar-toggle-button"
@@ -614,11 +757,7 @@ const NotesPage = () => {
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
           >
             {user && user.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt="Profile"
-                className="profile-picture"
-              />
+              <img src={user.photoURL} alt="Profile" className="profile-picture" />
             ) : (
               <div className="profile-placeholder">P</div>
             )}
@@ -649,6 +788,7 @@ const NotesPage = () => {
 
         {/* Sidebar Component */}
         <Sidebar
+          ref={sidebarRef}
           folders={folders}
           handleEditFolder={handleEditFolder}
           handleDeleteFolder={handleDeleteFolder}
