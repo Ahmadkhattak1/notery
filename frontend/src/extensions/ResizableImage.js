@@ -47,13 +47,14 @@ const ResizableImage = Image.extend({
 
   group: 'inline',
   inline: true,
-  atom: true, // Make the node atomic
-  
+  atom: true,
+
   addNodeView() {
     return ({ node, getPos, editor }) => {
       let isDragging = false;
       let startX = 0;
       let startWidth = 0;
+      let currentNode = node; // Keep track of the current node
 
       const wrapper = document.createElement('div');
       wrapper.style.position = 'relative';
@@ -70,16 +71,16 @@ const ResizableImage = Image.extend({
       content.style.display = 'inline-block';
 
       const img = document.createElement('img');
-      img.src = node.attrs.src;
-      img.style.width = node.attrs.width || '250px';
+      img.src = currentNode.attrs.src;
+      img.style.width = currentNode.attrs.width || '250px';
       img.style.height = 'auto';
-      img.style.display = node.attrs.minimized ? 'none' : 'block';
+      img.style.display = currentNode.attrs.minimized ? 'none' : 'block';
 
       // Placeholder when minimized
       const placeholder = document.createElement('div');
-      placeholder.style.width = node.attrs.width || '250px';
+      placeholder.style.width = currentNode.attrs.width || '250px';
       placeholder.style.height = '50px';
-      placeholder.style.display = node.attrs.minimized ? 'flex' : 'none';
+      placeholder.style.display = currentNode.attrs.minimized ? 'flex' : 'none';
       placeholder.style.alignItems = 'center';
       placeholder.style.justifyContent = 'center';
       placeholder.style.backgroundColor = '#f0f0f0';
@@ -87,17 +88,23 @@ const ResizableImage = Image.extend({
       placeholder.textContent = 'Image minimized (click to expand)';
       placeholder.style.cursor = 'pointer';
 
-      placeholder.addEventListener('click', (event) => {
+      const onPlaceholderClick = (event) => {
         event.preventDefault();
+        event.stopPropagation();
         const minimized = false;
-        editor.chain().focus().command(({ tr }) => {
-          tr.setNodeMarkup(getPos(), undefined, {
-            ...node.attrs,
-            minimized,
-          });
-          return true;
-        }).run();
-      });
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            tr.setNodeMarkup(getPos(), undefined, {
+              ...currentNode.attrs,
+              minimized,
+            });
+            return true;
+          })
+          .run();
+      };
+      placeholder.addEventListener('click', onPlaceholderClick);
 
       content.appendChild(img);
       content.appendChild(placeholder);
@@ -121,13 +128,14 @@ const ResizableImage = Image.extend({
 
       const onDelete = (event) => {
         event.preventDefault();
-        editor.chain().focus().deleteRange({ from: getPos(), to: getPos() + node.nodeSize }).run();
+        event.stopPropagation();
+        editor.chain().focus().deleteRange({ from: getPos(), to: getPos() + currentNode.nodeSize }).run();
       };
       deleteButton.addEventListener('click', onDelete);
 
       // Minimize Button
       const minimizeButton = document.createElement('button');
-      minimizeButton.textContent = node.attrs.minimized ? '🔍' : '➖';
+      minimizeButton.textContent = currentNode.attrs.minimized ? '🔍' : '➖';
       minimizeButton.style.background = 'rgba(255, 255, 255, 0.7)';
       minimizeButton.style.border = 'none';
       minimizeButton.style.cursor = 'pointer';
@@ -136,14 +144,19 @@ const ResizableImage = Image.extend({
 
       const onToggleMinimize = (event) => {
         event.preventDefault();
-        const minimized = !node.attrs.minimized;
-        editor.chain().focus().command(({ tr }) => {
-          tr.setNodeMarkup(getPos(), undefined, {
-            ...node.attrs,
-            minimized,
-          });
-          return true;
-        }).run();
+        event.stopPropagation();
+        const minimized = !currentNode.attrs.minimized;
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            tr.setNodeMarkup(getPos(), undefined, {
+              ...currentNode.attrs,
+              minimized,
+            });
+            return true;
+          })
+          .run();
       };
       minimizeButton.addEventListener('click', onToggleMinimize);
 
@@ -165,6 +178,7 @@ const ResizableImage = Image.extend({
 
       const onMouseDown = (event) => {
         event.preventDefault();
+        event.stopPropagation(); // Prevent event from bubbling up
         isDragging = true;
         startX = event.clientX;
         startWidth = img.offsetWidth;
@@ -189,13 +203,17 @@ const ResizableImage = Image.extend({
         if (!isDragging) return;
         isDragging = false;
 
-        editor.chain().focus().command(({ tr }) => {
-          tr.setNodeMarkup(getPos(), undefined, {
-            ...node.attrs,
-            width: img.style.width,
-          });
-          return true;
-        }).run();
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            tr.setNodeMarkup(getPos(), undefined, {
+              ...currentNode.attrs,
+              width: img.style.width,
+            });
+            return true;
+          })
+          .run();
 
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
@@ -218,19 +236,24 @@ const ResizableImage = Image.extend({
           if (updatedNode.type.name !== 'image') {
             return false;
           }
+          currentNode = updatedNode; // Update the current node
+
           img.src = updatedNode.attrs.src;
           img.style.width = updatedNode.attrs.width || '250px';
           img.style.display = updatedNode.attrs.minimized ? 'none' : 'block';
+
           placeholder.style.width = updatedNode.attrs.width || '250px';
           placeholder.style.display = updatedNode.attrs.minimized ? 'flex' : 'none';
+
           minimizeButton.textContent = updatedNode.attrs.minimized ? '🔍' : '➖';
+
           return true;
         },
         destroy() {
           resizeHandle.removeEventListener('mousedown', onMouseDown);
           deleteButton.removeEventListener('click', onDelete);
           minimizeButton.removeEventListener('click', onToggleMinimize);
-          placeholder.removeEventListener('click', onToggleMinimize);
+          placeholder.removeEventListener('click', onPlaceholderClick);
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
         },
