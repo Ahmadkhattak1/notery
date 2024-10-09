@@ -758,3 +758,46 @@ body {
         max-width: 80ch; /* Maintain character limit */
     }
 }
+
+/* Offline Alert Styling */
+.offline-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #c53d3d; /* Orange color to grab attention */
+    color: white;
+    text-align: center;
+    padding: 10px;
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .offline-alert p {
+    margin: 0;
+  }
+  
+  /* Save Indicator Styling */
+.save-indicator {
+    position: fixed;
+    bottom: 20px; /* Adjust as needed */
+    right: 20px;
+    background-color: #4caf50; /* Green color when saved */
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    z-index: 1000;
+    font-size: 14px;
+    transition: background-color 0.3s, opacity 0.3s;
+    opacity: 0; /* Start as invisible */
+  }
+  
+  .save-indicator.visible {
+    opacity: 1; /* Show when active */
+  }
+  
+  .save-indicator.saving {
+    background-color: #ff9800; /* Orange color when saving */
+  }
+  

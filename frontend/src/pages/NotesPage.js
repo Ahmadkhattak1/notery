@@ -46,6 +46,8 @@ import { getAuth, signOut } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { useNavigate } from 'react-router-dom';
 
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 Modal.setAppElement('#root');
 
 const NotesPage = () => {
@@ -63,11 +65,9 @@ const NotesPage = () => {
   const auth = getAuth();
   const navigate = useNavigate();
 
-  // Dropdown state for folders
   const [isFolderDropdownOpen, setIsFolderDropdownOpen] = useState(false);
   const [selectedFolderDropdown, setSelectedFolderDropdown] = useState(null);
 
-  // Dropdown state for notes
   const [isNoteDropdownOpen, setIsNoteDropdownOpen] = useState(false);
   const [selectedNoteDropdown, setSelectedNoteDropdown] = useState(null);
 
@@ -89,17 +89,19 @@ const NotesPage = () => {
     { name: 'Brown', color: '#64473A' },
   ];
 
-  // State to track the active note
   const [activeNote, setActiveNote] = useState(null);
 
-  // Online/offline status
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState([]);
 
-  // Ref to the sidebar element
   const sidebarRef = useRef(null);
 
-  // Handler to edit a folder
+  const storage = getStorage();
+
+  const [isSaved, setIsSaved] = useState(true);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   const handleEditFolder = (folder) => {
     setEditingFolder(folder);
     setEditFolderName(folder.name);
@@ -107,7 +109,6 @@ const NotesPage = () => {
     setIsFolderDropdownOpen(false);
   };
 
-  // Function to open the Add Folder Modal
   const openAddFolderModal = () => {
     setIsFolderModalOpen(true);
     setEditingFolder(null);
@@ -115,38 +116,43 @@ const NotesPage = () => {
     setFolderName('');
   };
 
-  // Function to handle adding a new note
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (!editor) return;
 
-    // Generate a new note object
-    const newNote = {
-      id: null, // Will be set after saving to Firestore
-      title: 'Untitled Note',
-      content: '<h1></h1><p></p>', // Empty content
-      folderId: selectedFolder || null,
-      userId: user.uid,
-      createdAt: null,
-      updatedAt: null,
-      isNew: true, // Custom flag to indicate it's a new note not yet saved
-    };
+    try {
+      const docRef = await addDoc(collection(db, 'notes'), {
+        title: 'Untitled Note',
+        content: '<h1></h1><p></p>',
+        folderId: selectedFolder || null,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: null,
+      });
 
-    setActiveNote(newNote);
+      const newNote = {
+        id: docRef.id,
+        title: 'Untitled Note',
+        content: '<h1></h1><p></p>',
+        folderId: selectedFolder || null,
+        userId: user.uid,
+        createdAt: new Date(),
+        updatedAt: null,
+      };
 
-    // Add the new note to the local notes array to display in the sidebar
-    setNotes((prevNotes) => [newNote, ...prevNotes]);
+      setActiveNote(newNote);
 
-    // Set the editor content to empty
-    editor.commands.setContent('<h1></h1><p></p>');
-    console.log('New untitled note initialized.');
+      editor.commands.setContent('<h1></h1><p></p>');
+      console.log('New untitled note initialized.');
 
-    // On smaller screens, close the sidebar after adding a note
-    if (window.innerWidth <= 768) {
-      setIsSidebarOpen(false);
+      if (window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      }
+    } catch (error) {
+      console.error('Error adding note:', error);
+      alert('Failed to add the note. Please try again.');
     }
   };
 
-  // Function to handle adding a new folder
   const handleAddFolder = async () => {
     if (!folderName.trim()) {
       alert("Folder name can't be empty");
@@ -168,7 +174,6 @@ const NotesPage = () => {
     }
   };
 
-  // Function to handle renaming a folder
   const handleRenameFolder = async () => {
     if (!editingFolder || !editFolderName.trim()) {
       alert("Folder name can't be empty");
@@ -191,17 +196,15 @@ const NotesPage = () => {
     }
   };
 
-  // Function to handle deleting a folder
   const handleDeleteFolder = async (folderId) => {
     if (
       !window.confirm(
-        'Are you sure you want to delete this folder? This will move all its notes to Unassigned.'
+        'Are you sure you want to delete this collection? All notes within will be moved to Unassigned.'
       )
     )
       return;
 
     try {
-      // Move all notes from this folder to Unassigned (folderId = null)
       const notesRef = collection(db, 'notes');
       const notesSnapshot = await getDocs(query(notesRef, where('folderId', '==', folderId)));
 
@@ -213,7 +216,6 @@ const NotesPage = () => {
       await batch.commit();
       console.log('All notes moved to Unassigned.');
 
-      // Delete the folder
       await deleteDoc(doc(db, 'folders', folderId));
       console.log('Folder deleted successfully:', folderId);
     } catch (error) {
@@ -222,7 +224,6 @@ const NotesPage = () => {
     }
   };
 
-  // Function to handle moving a note to a different folder
   const handleMoveNote = async (noteId, newFolderId) => {
     try {
       const noteRef = doc(db, 'notes', noteId);
@@ -234,7 +235,6 @@ const NotesPage = () => {
     }
   };
 
-  // TipTap editor setup with advanced features
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -300,16 +300,12 @@ const NotesPage = () => {
           event.preventDefault();
 
           if (editor.isActive('listItem')) {
-            // If inside a list item, indent or outdent
             if (event.shiftKey) {
-              // If Shift+Tab, outdent
               editor.commands.liftListItem('listItem');
             } else {
-              // If Tab, indent
               editor.commands.sinkListItem('listItem');
             }
           } else {
-            // For regular paragraphs, insert spaces to simulate a tab
             editor.commands.command(({ tr, state }) => {
               const { selection } = state;
               tr.insertText('\u00A0\u00A0\u00A0\u00A0', selection.from, selection.to);
@@ -353,7 +349,6 @@ const NotesPage = () => {
       editor.on('selectionUpdate', updateTextColor);
       editor.on('transaction', updateTextColor);
 
-      // Auto-save handler with debouncing
       const saveTimeout = { current: null };
 
       const handleAutoSave = () => {
@@ -362,10 +357,16 @@ const NotesPage = () => {
         }
         saveTimeout.current = setTimeout(() => {
           handleSaveNote();
-        }, 1000); // Debounce interval: 1 second
+        }, 1000);
       };
 
-      editor.on('update', handleAutoSave);
+      editor.on('update', () => {
+        if (activeNote) {
+          handleAutoSave();
+          setIsSaved(false);
+          setHasUnsavedChanges(true);
+        }
+      });
 
       return () => {
         editor.off('selectionUpdate', updateTextColor);
@@ -378,7 +379,6 @@ const NotesPage = () => {
     }
   }, [editor, activeNote]);
 
-  // Enhanced error logging and authentication check
   const handleSaveNote = async () => {
     if (!editor) {
       console.warn('Editor instance is not available.');
@@ -390,10 +390,14 @@ const NotesPage = () => {
       return;
     }
 
+    if (!activeNote) {
+      console.warn('No active note to save.');
+      return;
+    }
+
     const htmlContent = editor.getHTML();
     console.log('Autosave triggered. Current content:', htmlContent);
 
-    // Extract the first heading as the title
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
 
@@ -401,7 +405,6 @@ const NotesPage = () => {
     let title = heading ? heading.textContent.trim() : '';
 
     if (!title) {
-      // Generate title from content by replacing line breaks with spaces
       const textContent = tempDiv.textContent.replace(/\n/g, ' ').trim();
       if (textContent.length > 0) {
         title = textContent.substring(0, 40);
@@ -412,19 +415,18 @@ const NotesPage = () => {
 
     console.log('Determined title:', title);
 
-    // Check if content is empty
     const isContentEmpty = tempDiv.textContent.trim() === '';
+
     if (isContentEmpty) {
-      // Remove the note from local state if it's empty
-      if (activeNote && activeNote.isNew) {
-        setNotes((prevNotes) => prevNotes.filter((note) => note !== activeNote));
+      try {
+        await deleteDoc(doc(db, 'notes', activeNote.id));
+        console.log('Empty note deleted:', activeNote.id);
         setActiveNote(null);
         editor.commands.setContent('<h1></h1><p></p>');
-        console.log('New empty note discarded.');
-      } else if (activeNote && activeNote.id) {
-        // If content is empty and it's an existing note, delete it without confirmation
-        console.log('Active note exists but content is empty. Deleting note:', activeNote.id);
-        await handleDeleteNote(activeNote.id, false);
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Error deleting empty note:', error);
+        alert('Failed to delete the empty note. Please try again.');
       }
       return;
     }
@@ -432,91 +434,64 @@ const NotesPage = () => {
     const saveNoteToFirestore = async () => {
       try {
         if (activeNote && activeNote.id) {
-          // Editing an existing note
           const noteRef = doc(db, 'notes', activeNote.id);
           await updateDoc(noteRef, {
             title: title,
             content: htmlContent,
             updatedAt: serverTimestamp(),
           });
-          console.log('Existing note updated:', activeNote.id);
+          console.log('Note updated:', activeNote.id);
 
-          // Update the activeNote state
-          const updatedNote = {
-            ...activeNote,
-            title,
-            content: htmlContent,
-            updatedAt: new Date(), // Approximate client-side timestamp
-            isNew: false,
-          };
-          setActiveNote(updatedNote);
-
-          // Update the note in the local notes array
-          setNotes((prevNotes) =>
-            prevNotes.map((note) => (note.id === activeNote.id ? updatedNote : note))
-          );
+          setIsSaved(true);
+          setHasUnsavedChanges(false);
         } else {
-          // Adding a new note
-          const docRef = await addDoc(collection(db, 'notes'), {
-            title: title,
-            content: htmlContent,
-            folderId: selectedFolder || null,
-            userId: user.uid,
-            createdAt: serverTimestamp(),
-            updatedAt: null,
-          });
-          console.log('New note added with ID:', docRef.id);
-
-          // Create a new note object
-          const createdNote = {
-            ...activeNote,
-            id: docRef.id,
-            title,
-            content: htmlContent,
-            createdAt: new Date(),
-            isNew: false, // Note is now saved
-          };
-
-          // Update the activeNote and notes array
-          setActiveNote(createdNote);
-          setNotes((prevNotes) =>
-            prevNotes.map((note) => (note === activeNote ? createdNote : note))
-          );
+          console.warn('Active note does not have an ID.');
         }
       } catch (error) {
-        console.error('Error saving note:', error.message, error.code, error);
+        console.error('Error saving note:', error);
         alert('Failed to save the note. Please try again.');
       }
     };
 
     if (isOnline) {
-      // If online, save immediately
       await saveNoteToFirestore();
     } else {
-      // If offline, queue the save action
       setOfflineQueue((prevQueue) => [...prevQueue, saveNoteToFirestore]);
       console.log('Save action queued due to offline status.');
+      setIsSaved(true);
     }
   };
 
-  // Function to open a note for viewing/editing
   const openNote = (note) => {
+    if (hasUnsavedChanges) {
+      const confirmSwitch = window.confirm(
+        'You have unsaved changes. Do you want to save them before opening another note?'
+      );
+      if (confirmSwitch) {
+        handleSaveNote();
+      }
+      setHasUnsavedChanges(false);
+    }
+
     setActiveNote(note);
     if (editor) {
       editor.commands.setContent(note.content);
       console.log('Opened note:', note.id);
     }
 
-    // On smaller screens, close the sidebar after selecting a note
     if (window.innerWidth <= 768) {
       setIsSidebarOpen(false);
     }
+
+    setIsSaved(true);
   };
 
-  // Function to handle deleting a note
   const handleDeleteNote = async (noteId, requireConfirmation = true) => {
     if (requireConfirmation) {
-      if (!window.confirm('Are you sure you want to delete this note?')) return;
+      if (
+        !window.confirm('Are you sure you want to delete this note? This action cannot be undone.')
+      )
+        return;
     }
 
     try {
@@ -525,23 +500,19 @@ const NotesPage = () => {
       if (activeNote && activeNote.id === noteId) {
         setActiveNote(null);
         if (editor) {
-          editor.commands.setContent('<h1></h1><p></p>'); // Reset to empty title and paragraph
+          editor.commands.setContent('<h1></h1><p></p>');
           console.log('Editor content reset after deletion.');
         }
       }
-      // Remove the note from the local notes array
-      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
     } catch (error) {
       console.error('Error deleting note:', error.message, error.code, error);
       alert('Failed to delete the note. Please try again.');
     }
   };
 
-  // Fetch folders and notes from Firestore
   useEffect(() => {
     if (!user) return;
 
-    // Fetch folders
     const unsubscribeFolders = onSnapshot(collection(db, 'folders'), (snapshot) => {
       const foldersData = snapshot.docs
         .filter((doc) => doc.data().userId === user.uid)
@@ -549,17 +520,23 @@ const NotesPage = () => {
       setFolders(foldersData);
     });
 
-    // Fetch notes
-    const unsubscribeNotes = onSnapshot(collection(db, 'notes'), (snapshot) => {
-      const notesData = snapshot.docs
-        .filter((doc) => doc.data().userId === user.uid)
-        .map((doc) => ({ id: doc.id, ...doc.data() }));
+    const notesRef = collection(db, 'notes');
+    const notesQuery = query(notesRef, where('userId', '==', user.uid));
 
-      // Merge with any unsaved notes
-      setNotes((prevNotes) => {
-        const unsavedNotes = prevNotes.filter((note) => !note.id);
-        return [...unsavedNotes, ...notesData];
-      });
+    const unsubscribeNotes = onSnapshot(notesQuery, (snapshot) => {
+      const notesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setNotes(notesData);
+
+      if (activeNote) {
+        const updatedActiveNote = notesData.find((note) => note.id === activeNote.id);
+        if (updatedActiveNote) {
+          setActiveNote(updatedActiveNote);
+        } else {
+          // Note was deleted
+          setActiveNote(null);
+          editor.commands.setContent('<h1></h1><p></p>');
+        }
+      }
     });
 
     return () => {
@@ -568,15 +545,22 @@ const NotesPage = () => {
     };
   }, [user]);
 
-  // Monitor online/offline status
   useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
       setIsOnline(true);
       console.log('Back online.');
-      // Process any queued actions
+
       if (offlineQueue.length > 0) {
-        offlineQueue.forEach((action) => action());
+        const queuedActions = [...offlineQueue];
         setOfflineQueue([]);
+
+        for (const action of queuedActions) {
+          try {
+            await action();
+          } catch (error) {
+            console.error('Error processing queued action:', error);
+          }
+        }
       }
     };
 
@@ -594,10 +578,8 @@ const NotesPage = () => {
     };
   }, [offlineQueue]);
 
-  // Close dropdowns and sidebar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close folder dropdown if clicking outside
       if (
         isFolderDropdownOpen &&
         !event.target.closest('.folder-dropdown-container') &&
@@ -607,7 +589,6 @@ const NotesPage = () => {
         setSelectedFolderDropdown(null);
       }
 
-      // Close note dropdown if clicking outside
       if (
         isNoteDropdownOpen &&
         !event.target.closest('.note-dropdown-container') &&
@@ -617,7 +598,6 @@ const NotesPage = () => {
         setSelectedNoteDropdown(null);
       }
 
-      // Close profile dropdown if clicking outside
       if (
         isProfileDropdownOpen &&
         !event.target.closest('.profile-dropdown') &&
@@ -626,7 +606,6 @@ const NotesPage = () => {
         setIsProfileDropdownOpen(false);
       }
 
-      // Close sidebar if clicking outside and sidebar is open and on small screen
       if (
         isSidebarOpen &&
         window.innerWidth <= 768 &&
@@ -651,54 +630,68 @@ const NotesPage = () => {
     sidebarRef,
   ]);
 
-  // Image upload handlers
   const handleImageUpload = async (event) => {
+    if (!isOnline) {
+      alert('Image upload requires an internet connection.');
+      return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = reader.result;
+    try {
+      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${file.name}`);
+
+      await uploadBytes(storageRef, file);
+
+      const url = await getDownloadURL(storageRef);
+
       editor
         .chain()
         .focus()
         .setImage({ src: url, width: '250px', height: 'auto', 'data-resizable-image': '' })
         .run();
-      console.log('Image uploaded:', url);
-    };
-    reader.onerror = () => {
-      console.error('Error reading file for upload.');
+
+      console.log('Image uploaded and inserted:', url);
+    } catch (error) {
+      console.error('Error uploading image:', error);
       alert('Failed to upload the image. Please try again.');
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleCameraCapture = async (event) => {
+    if (!isOnline) {
+      alert('Image upload requires an internet connection.');
+      return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = reader.result;
+    try {
+      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${file.name}`);
+
+      await uploadBytes(storageRef, file);
+
+      const url = await getDownloadURL(storageRef);
+
       editor
         .chain()
         .focus()
         .setImage({ src: url, width: '250px', height: 'auto', 'data-resizable-image': '' })
         .run();
-      console.log('Camera image captured:', url);
-    };
-    reader.onerror = () => {
-      console.error('Error reading file from camera capture.');
-      alert('Failed to capture the image. Please try again.');
-    };
-    reader.readAsDataURL(file);
+
+      console.log('Camera image captured and inserted:', url);
+    } catch (error) {
+      console.error('Error uploading camera image:', error);
+      alert('Failed to upload the image. Please try again.');
+    }
   };
 
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
         console.log('User logged out');
-        // Navigate to login page if needed
         navigate('/login');
       })
       .catch((error) => {
@@ -706,7 +699,6 @@ const NotesPage = () => {
       });
   };
 
-  // Drag and Drop Handler
   const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
 
@@ -729,17 +721,29 @@ const NotesPage = () => {
     }
   };
 
+  const Header = () => (
+    <header className="app-header">
+      <h1>My Notes</h1>
+    </header>
+  );
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="notes-container">
-        {/* Internet Connectivity Alert */}
+        <Header />
+
         {!isOnline && (
           <div className="offline-alert">
             <p>You are offline. Changes will be saved when the connection is restored.</p>
           </div>
         )}
 
-        {/* Hamburger Icon for Sidebar Toggle */}
+        {isSaved ? (
+          <div className="save-indicator">All changes saved</div>
+        ) : (
+          <div className="save-indicator">Saving...</div>
+        )}
+
         <button
           className="sidebar-toggle-button"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -750,7 +754,6 @@ const NotesPage = () => {
           ☰
         </button>
 
-        {/* Profile Section */}
         <div className="profile-section">
           <div
             className="profile-icon"
@@ -786,7 +789,6 @@ const NotesPage = () => {
           )}
         </div>
 
-        {/* Sidebar Component */}
         <Sidebar
           ref={sidebarRef}
           folders={folders}
@@ -812,17 +814,21 @@ const NotesPage = () => {
           handleDeleteNote={handleDeleteNote}
         />
 
-        {/* NoteEditor Component */}
-        <NoteEditor
-          activeNote={activeNote}
-          editor={editor}
-          textColor={textColor}
-          colorOptions={colorOptions}
-          handleImageUpload={handleImageUpload}
-          handleCameraCapture={handleCameraCapture}
-        />
+        {activeNote ? (
+          <NoteEditor
+            activeNote={activeNote}
+            editor={editor}
+            textColor={textColor}
+            colorOptions={colorOptions}
+            handleImageUpload={handleImageUpload}
+            handleCameraCapture={handleCameraCapture}
+          />
+        ) : (
+          <div className="no-active-note">
+            <p>Please select or create a note to start editing.</p>
+          </div>
+        )}
 
-        {/* Add/Edit Folder Modal */}
         <Modal
           isOpen={isFolderModalOpen}
           onRequestClose={() => {
