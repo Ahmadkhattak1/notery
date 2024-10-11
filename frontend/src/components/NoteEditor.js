@@ -102,7 +102,7 @@ const NoteEditor = ({
           <button
             onClick={() => {
               const date = new Date().toLocaleDateString();
-              editor.chain().focus().insertContent(`<p>${date}</p>`).run();
+              editor.chain().focus().insertContent(`<p>${date}</p>`).run(); // Corrected to use template literal
               console.log('Date stamp inserted:', date);
             }}
             disabled={!editor}

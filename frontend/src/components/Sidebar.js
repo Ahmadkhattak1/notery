@@ -26,7 +26,36 @@ const Sidebar = React.forwardRef((props, ref) => {
     isNoteDropdownOpen,
     setIsNoteDropdownOpen,
     handleDeleteNote,
+    isCreatingNote, // Added prop
   } = props;
+
+  // Function to toggle folder dropdown
+  const toggleFolderDropdown = (folderId) => {
+    if (isFolderDropdownOpen && selectedFolderDropdown === folderId) {
+        setIsFolderDropdownOpen(false);
+        setSelectedFolderDropdown(null);
+    } else {
+        setIsFolderDropdownOpen(true);
+        setSelectedFolderDropdown(folderId);
+    }
+};
+
+
+  // Function to toggle note dropdown
+  const toggleNoteDropdown = (noteId) => {
+    if (isNoteDropdownOpen && selectedNoteDropdown === noteId) {
+      setIsNoteDropdownOpen(false);
+      setSelectedNoteDropdown(null);
+    } else {
+      setIsNoteDropdownOpen(true);
+      setSelectedNoteDropdown(noteId);
+      // Close folder dropdown if open
+      if (isFolderDropdownOpen) {
+        setIsFolderDropdownOpen(false);
+        setSelectedFolderDropdown(null);
+      }
+    }
+  };
 
   return (
     <div
@@ -37,9 +66,7 @@ const Sidebar = React.forwardRef((props, ref) => {
       {/* Add Folder Modal Trigger */}
       <button
         className="add-folder-button"
-        onClick={() => {
-          openAddFolderModal();
-        }}
+        onClick={openAddFolderModal}
         title="Add Collection"
       >
         Add Collection
@@ -72,49 +99,52 @@ const Sidebar = React.forwardRef((props, ref) => {
                   setSelectedFolder(folder.id);
                 }}
                 title="Add Note"
+                disabled={isCreatingNote} // Disable if creating a note
               >
-                +
+                {isCreatingNote ? 'Creating...' : '+'} {/* Show 'Creating...' */}
               </button>
 
-              {/* Three-Dot Menu Button */}
-              <button
-                className="folder-dots"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedFolderDropdown(
-                    selectedFolderDropdown === folder.id ? null : folder.id
-                  );
-                  setIsFolderDropdownOpen(selectedFolderDropdown !== folder.id);
-                }}
-                aria-label="Folder Options"
-              >
-                ⋮
-              </button>
-            </div>
+              {/* Wrapper for Dots Button and Dropdown */}
+              <div className="dropdown-wrapper">
+                {/* Three-Dot Menu Button */}
+                <button
+                  className="folder-dots"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFolderDropdown(folder.id);
+                  }}
+                  aria-label="Folder Options"
+                  aria-haspopup="true"
+                  aria-expanded={isFolderDropdownOpen && selectedFolderDropdown === folder.id}
+                >
+                  ⋮
+                </button>
 
-            {/* Dropdown for Folder Actions */}
-            {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
-              <div className="folder-dropdown-container folder-management-dropdown show-dropdown">
-                <ul>
-                  <li
-                    onClick={() => {
-                      handleEditFolder(folder);
-                      setIsFolderDropdownOpen(false);
-                    }}
-                  >
-                    Edit
-                  </li>
-                  <li
-                    onClick={() => {
-                      handleDeleteFolder(folder.id);
-                      setIsFolderDropdownOpen(false);
-                    }}
-                  >
-                    Delete
-                  </li>
-                </ul>
+                {/* Dropdown for Folder Actions */}
+                {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
+                  <div className="folder-dropdown-container show-dropdown">
+                    <ul>
+                      <li
+                        onClick={() => {
+                          handleEditFolder(folder);
+                          setIsFolderDropdownOpen(false);
+                        }}
+                      >
+                        Edit
+                      </li>
+                      <li
+                        onClick={() => {
+                          handleDeleteFolder(folder.id);
+                          setIsFolderDropdownOpen(false);
+                        }}
+                      >
+                        Delete
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Notes List within Collection */}
             {selectedFolder === folder.id && (
@@ -129,8 +159,8 @@ const Sidebar = React.forwardRef((props, ref) => {
                       .filter((note) => note.folderId === folder.id)
                       .map((note, index) => (
                         <Draggable
-                          key={note.id || `new-${index}`}
-                          draggableId={note.id || `new-${index}`}
+                          key={note.id || `new-${index}`} // Fixed key
+                          draggableId={note.id || `new-${index}`} // Fixed draggableId
                           index={index}
                         >
                           {(provided) => (
@@ -150,27 +180,26 @@ const Sidebar = React.forwardRef((props, ref) => {
                               >
                                 {note.title || 'Untitled Note'}
                               </span>
-                              {/* 3-Dot Dropdown for Notes */}
-                              <button
-                                className="note-dots"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedNoteDropdown(
-                                    selectedNoteDropdown === note.id ? null : note.id
-                                  );
-                                  setIsNoteDropdownOpen(
-                                    selectedNoteDropdown !== note.id
-                                  );
-                                }}
-                                aria-label="Note Options"
-                              >
-                                ⋮
-                              </button>
+                              
+                              {/* Wrapper for Note Dots Button and Dropdown */}
+                              <div className="dropdown-wrapper">
+                                {/* 3-Dot Dropdown for Notes */}
+                                <button
+                                  className="note-dots"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleNoteDropdown(note.id);
+                                  }}
+                                  aria-label="Note Options"
+                                  aria-haspopup="true"
+                                  aria-expanded={isNoteDropdownOpen && selectedNoteDropdown === note.id}
+                                >
+                                  ⋮
+                                </button>
 
-                              {/* Dropdown for Note Actions */}
-                              {isNoteDropdownOpen &&
-                                selectedNoteDropdown === note.id && (
-                                  <div className="note-dropdown-container note-management-dropdown show-dropdown">
+                                {/* Dropdown for Note Actions */}
+                                {isNoteDropdownOpen && selectedNoteDropdown === note.id && (
+                                  <div className="note-dropdown-container show-dropdown">
                                     <ul>
                                       <li
                                         onClick={() => {
@@ -191,6 +220,7 @@ const Sidebar = React.forwardRef((props, ref) => {
                                     </ul>
                                   </div>
                                 )}
+                              </div>
                             </li>
                           )}
                         </Draggable>
@@ -200,9 +230,9 @@ const Sidebar = React.forwardRef((props, ref) => {
                 )}
               </Droppable>
             )}
-          </li>
+          </li> 
         ))}
-      </ul>
+      </ul> 
     </div>
   );
 });

@@ -122,7 +122,7 @@ const NotesPage = () => {
     try {
       const docRef = await addDoc(collection(db, 'notes'), {
         title: 'Untitled Note',
-        content: '<h1></h1><p></p>',
+        content: '<h1></h1>',
         folderId: selectedFolder || null,
         userId: user.uid,
         createdAt: serverTimestamp(),

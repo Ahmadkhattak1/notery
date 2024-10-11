@@ -2,26 +2,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
 /* Global Box-Sizing Reset */
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
-/* Global Styles for Notes Page */
+/* Global Styles for the Application */
 body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    color: #333;
-    background-color: #f0f2f5; /* Light background for contrast */
+    color: #4D4D4D; /* Primary text color */
+    background-color: #FFFFFF; /* White background for a clean look */
+    overflow: hidden; /* Prevent scroll on body */
 }
 
-/* Container for the entire Notes Page */
+/* Utility Classes */
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+/* Header Styling */
+.app-header {
+    width: 100%;
+    background-color: #f1fcff; /* Solid blue background */
+    padding: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed; /* Fix the header at the top */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1500; /* Ensure it stays above other elements */
+}
+
+.app-header h1 {
+    color: #2193b0; /* Blue text for contrast */
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Adjust Main Container to Account for Fixed Header */
 .notes-container {
     display: flex;
     height: 100vh;
     overflow: hidden;
     position: relative;
-    background-color: #f0f2f5;
+    background-color: #FFFFFF; /* White background */
+    padding-top: 80px; /* Height of the header */
 }
 
 /* Sidebar Toggle Button (Hamburger Icon) */
@@ -36,34 +71,35 @@ body {
     height: 40px;
     font-size: 24px;
     cursor: pointer;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Minimal shadow */
     display: none; /* Hidden by default, shown on smaller screens */
     align-items: center;
     justify-content: center;
-    z-index: 2000; /* Increased z-index to appear above the sidebar */
-    transition: transform 0.3s ease;
+    z-index: 2000; /* Above the sidebar */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .sidebar-toggle-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15); /* Slightly increased on hover */
 }
 
 /* Collections Sidebar */
 .collections-sidebar {
+    min-width: 300px;
     width: 300px;
-    background-color: #ffffff;
+    background-color: #f1fcff;
     border-radius: 10px;
-    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
     padding: 20px;
     display: flex;
     flex-direction: column;
     transition: transform 0.3s ease-in-out, width 0.3s ease;
     overflow-y: auto;
-    max-height: 100vh;
+    overflow-x: visible; /* Allow horizontal overflow for dropdown */
+    max-height: 90vh;
     box-sizing: border-box;
     position: relative;
-    z-index: 1000; /* Ensure sidebar is below the toggle button */
+    z-index: 1000; /* Below the toggle button */
 }
 
 /* Sidebar Closed State (for smaller screens) */
@@ -82,7 +118,7 @@ body {
 .collections-sidebar h2 {
     font-size: 24px;
     font-weight: 700;
-    margin-top: 40px; /* Added top margin to prevent overlap with hamburger */
+    margin-top: 60px; /* Prevent overlap with fixed header */
     margin-bottom: 20px;
     color: #2193b0;
     text-align: left;
@@ -90,21 +126,21 @@ body {
 
 /* Add Collection Button */
 .add-folder-button {
-    background-color: rgb(227, 242, 253); /* Soft blue color for subtle visibility */
-    color: #1976d2; /* Darker blue text for contrast */
+    background-color: #2193b0; /* Solid blue background */
+    color: #FFFFFF; /* White text for contrast */
     border: none;
-    border-radius: 10px; /* Rounded corners for a smooth look */
-    padding: 10px 20px; /* More padding for a larger clickable area */
-    font-size: 15px; /* Comfortable font size */
+    border-radius: 8px; /* Slightly rounded corners */
+    padding: 10px 20px; /* Comfortable padding */
+    font-size: 16px; /* Increased font size for better readability */
     cursor: pointer;
     font-weight: 600; /* Medium weight for a modern appearance */
-    transition: background-color 0.1s ease, transform 0.1s ease;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow for slight depth */
+    transition: background-color 0.2s ease, transform 0.1s ease;
     margin-bottom: 20px; /* Space below the button for separation */
 }
 
 .add-folder-button:hover {
-    background-color: #cdf0ff;
+    background-color: #1a78a0; /* Darker blue on hover */
+    transform: scale(1.02);
 }
 
 /* Folders List */
@@ -142,7 +178,7 @@ body {
     align-items: center; /* Vertically center all items */
     padding: 10px 15px;
     background-color: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s ease;
     position: relative;
@@ -159,71 +195,84 @@ body {
     align-items: center;
     gap: 10px; /* Space between folder name, dots, and add note button */
     flex-grow: 1; /* Take up available space */
+    position: relative;
 }
 
 /* Folder Name */
 .folder-name {
     flex-grow: 1; /* Takes up available space */
-    font-size: 16px; /* Slightly larger for readability */
+    font-size: 16px; /* Reduced font size for longer titles */
     font-weight: 500; /* Medium weight for a clean look */
     color: #1a1a1a; /* Darker gray for improved contrast */
     white-space: nowrap; /* Prevent wrapping */
     overflow: hidden; /* Hide overflow text */
     text-overflow: ellipsis; /* Ellipsis for long text */
-    margin-left: 5px; /* Space between arrow and text */
 }
 
 /* Folder Toggle Icon */
 .folder-toggle {
-    font-size: 18px;
+    font-size: 14px;
     color: #333333;
     cursor: pointer;
     transition: transform 0.3s ease;
-    margin-right: 10px; /* Space after the arrow */
+    margin-right: 5px; /* Space after the arrow */
 }
 
-.folder-toggle.rotate {
-    transform: rotate(180deg);
+/* Dropdown Wrapper to Position Relative */
+.dropdown-wrapper {
+    position: relative; /* Establish positioning context for the dropdown */
+    display: inline-block; /* Ensure the wrapper only takes up the necessary space */
 }
 
-/* Folder and Note Dots Menu */
+/* Ensure Dots Buttons are Positioned Relatively */
 .folder-dots,
 .note-dots {
+    position: relative; /* Establish positioning context for the dropdown */
+    z-index: 1600; /* Higher than sidebar to appear on top */
     background: none;
     border: none;
-    font-size: 18px;
+    font-size: 20px; /* Increased size for better clickability */
     cursor: pointer;
     color: #555555;
     display: flex;
     align-items: center; /* Vertically center the dots */
     justify-content: center;
-    margin-left: 5px; /* Small space between name and dots */
+    margin-left: 10px; /* Increased space between name and dots */
     vertical-align: middle;
-    padding: 0; /* Remove default padding */
+    padding: 8px; /* Increased padding for larger clickable area */
+    border-radius: 4px; /* Rounded corners for better UX */
+    transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 .folder-dots:hover,
 .note-dots:hover {
     color: #2193b0;
+    background-color: #f0f0f0; /* Light background on hover */
 }
 
 /* Dropdown Containers */
 .folder-dropdown-container,
 .note-dropdown-container {
     position: absolute;
-    top: 40px;
-    right: 10px;
+    top: 100%; /* Directly below the dots button */
+    right: 0; /* Align to the right edge of the dots button */
     background-color: #ffffff;
     border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100; /* Lower than toggle button */
-    display: none;
+    border-radius: 8px;
+    z-index: 2000; /* Increased to ensure visibility above sidebar and other elements */
+    display: none; /* Hidden by default */
+    min-width: 120px; /* Minimum width for the dropdown */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    transform: translateY(-10px);
 }
 
 .folder-dropdown-container.show-dropdown,
 .note-dropdown-container.show-dropdown {
     display: block;
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .folder-dropdown-container ul,
@@ -245,33 +294,10 @@ body {
     background-color: #f1f1f1;
 }
 
-/* Add Note Icon within Collection */
-.add-note-icon {
-    background-color: #2193b0;
-    color: #ffffff;
-    border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    margin-right: 10px; /* Space between add note button and dots */
-}
-
-.add-note-icon:hover {
-    background-color: #1a78a0;
-    transform: scale(1.05);
-}
-
 /* Notes List within Collection */
 .notes-list {
     list-style: none;
-    padding: 10px 0 0 0;
+    padding: 10px 0 0px 10px;
     margin: 0;
 }
 
@@ -302,16 +328,35 @@ body {
     background-color: #e0f7fa;
 }
 
-.note-dropdown-container {
-    right: 40px;
+/* Add Note Icon within Collection */
+.add-note-icon {
+    background-color: #2193b0;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%; /* Perfect circle */
+    width: 30px; /* Perfect circle */
+    height: 30px; /* Perfect circle */
+    min-width: 30px;
+    min-height: 30px;
+    font-size: 20px; /* Adjusted font size */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.add-note-icon:hover {
+    background-color: #1a78a0;
+    /* Removed transform scaling to prevent deformation */
 }
 
 /* Profile Section */
 .profile-section {
-    position: absolute;
+    position: fixed; /* Fixed positioning to keep it always visible */
     top: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 1500; /* Above the sidebar */
 }
 
 .profile-icon {
@@ -323,8 +368,6 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    position: relative;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease;
 }
 
@@ -347,13 +390,13 @@ body {
 
 .profile-dropdown {
     position: absolute;
-    top: 50px;
+    top: 50px; /* Directly below the profile icon */
     right: 0;
     background-color: #ffffff;
     border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+    border-radius: 8px;
+    z-index: 2000; /* Ensure visibility above sidebar and dropdowns */
+    min-width: 150px; /* Ensure a minimum width */
 }
 
 .profile-dropdown ul {
@@ -379,7 +422,6 @@ body {
     height: 100%;
 }
 
-
 /* No Note Selected */
 .no-note-selected {
     margin: auto;
@@ -397,20 +439,16 @@ body {
     flex-direction: column;
     height: 100%;
     align-items: center; /* Center the editor horizontally */
-    background-color: #f0f2f5; /* Set desired background color */
-    padding: 20px; /* Optional: Add padding around the editor */
+    background-color: #FFFFFF; /* White background */
+    padding: 20px; /* Padding around the editor */
 }
-
 
 /* Editor Container */
 .editor-container {
     flex-grow: 1;
-    background-color: #ffffff;
+    background-color: #FFFFFF;
     border-radius: 10px;
-    padding: 15px;
-    padding-left: 150px;
-    padding-right: 150px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
     overflow-y: auto;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     position: relative; /* For placeholder positioning */
@@ -420,7 +458,6 @@ body {
     min-height: 250px; /* Set a minimum height */
     max-height: 800px; /* Optional: Set a maximum height to prevent excessive expansion */
 }
-
 
 .editor-content {
     height: 100%;
@@ -432,48 +469,52 @@ body {
     word-wrap: break-word; /* Ensure long words break */
 }
 
-
 /* Toolbar Styling */
 .toolbar {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    background-color: #f8f9fa; /* Light grey background */
+    border-radius: 8px;
     flex-wrap: wrap;
     margin-bottom: 10px;
 }
 
 .toolbar button,
 .toolbar select {
-    background-color: #f8f9fa;
-    border: none;
+    background-color: #FFFFFF; /* White background for toolbar buttons */
+    color: #4D4D4D; /* Dark grey text */
+    border: 1px solid #ddd; /* Light grey border */
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 6px; /* Slightly rounded corners */
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    transition: background-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
 }
 
 .toolbar button:hover,
 .toolbar select:hover {
-    background-color: #e9ecef;
-    transform: scale(1.05);
+    background-color: #f0f0f0; /* Light grey on hover */
 }
 
 .toolbar button.active {
-    background-color: #2193b0;
-    color: #ffffff;
+    background-color: #2193b0; /* Blue background for active button */
+    color: #FFFFFF; /* White text for contrast */
+    border: 1px solid #2193b0; /* Blue border */
 }
 
 .toolbar .text-color-select {
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid #ddd;
     background-color: #ffffff;
+    color: #4D4D4D;
     cursor: pointer;
+}
+
+.toolbar .text-color-select:hover {
+    border-color: #2193b0;
 }
 
 .toolbar .image-upload-options {
@@ -482,18 +523,19 @@ body {
 }
 
 .toolbar .image-upload-label {
-    background-color: #f8f9fa;
-    border: none;
+    background-color: #FFFFFF; /* White background */
+    color: #2193b0; /* Blue text */
+    border: 1px solid #2193b0; /* Blue border */
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .toolbar .image-upload-label:hover {
-    background-color: #e9ecef;
-    transform: scale(1.05);
+    background-color: #2193b0; /* Blue background on hover */
+    color: #FFFFFF; /* White text on hover */
 }
 
 /* Editor Buttons (Save and Cancel) */
@@ -554,22 +596,11 @@ body {
     border-radius: 20px; /* Rounded corners */
     width: 90%; /* Adaptive width */
     max-width: 400px; /* Limits modal width */
-    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2); /* Drop shadow for better focus */
     position: relative; /* So any inner elements are positioned relative to this */
     transform: scale(1); /* Ensure no scaling issues */
     animation: modalFadeIn 0.3s ease-in-out; /* Add a fade-in effect */
 }
 
-/* Modal Title */
-.modal-content h2 {
-    margin-top: 0; /* No extra margin at the top */
-    color: #2193b0; /* Title color */
-    font-size: 24px; /* Font size */
-    font-weight: 700; /* Bold text */
-    margin-bottom: 20px; /* Space below the title */
-}
-
-/* Animation for Smooth Fade-In */
 @keyframes modalFadeIn {
     from {
         opacity: 0;
@@ -581,6 +612,14 @@ body {
     }
 }
 
+.modal-content h2 {
+    margin-top: 0; /* No extra margin at the top */
+    color: #2193b0; /* Title color */
+    font-size: 24px; /* Font size */
+    font-weight: 700; /* Bold text */
+    margin-bottom: 20px; /* Space below the title */
+}
+
 .folder-modal-content {
     display: flex;
     flex-direction: column;
@@ -590,7 +629,7 @@ body {
 .folder-name-input {
     padding: 10px 15px;
     border: 1px solid #ddd;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 16px;
     transition: border-color 0.3s ease;
 }
@@ -625,6 +664,7 @@ body {
     background-color: #e9ecef;
 }
 
+/* Editor Placeholder */
 .editor-content.is-empty::before {
     content: attr(data-placeholder);
     color: #aaa;
@@ -649,12 +689,51 @@ body {
     line-height: 1.2;
 }
 
+/* Editor Buttons */
+.editor-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
 
+.save-button,
+.cancel-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.save-button {
+    background-color: #2193b0;
+    color: #ffffff;
+}
+
+.save-button:hover {
+    background-color: #1a78a0;
+    transform: translateY(-2px);
+}
+
+.cancel-button {
+    background-color: #f8f9fa;
+    color: #333333;
+}
+
+.cancel-button:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+}
 
 /* Responsive Design */
 
 /* Mobile Styles */
 @media (max-width: 768px) {
+    .collections-sidebar h2 {
+        margin-top: 80px;
+    }
+
     /* Show Hamburger Icon */
     .sidebar-toggle-button {
         display: flex; /* Show hamburger button */
@@ -714,6 +793,18 @@ body {
     .cancel-button {
         width: 100%;
     }
+
+    /* Dropdown Adjustments for Mobile */
+    .folder-dropdown-container,
+    .note-dropdown-container {
+        min-width: 100px; /* Reduce minimum width for smaller screens */
+    }
+
+    /* Autosave Status Adjustment for Mobile */
+    .save-indicator {
+        font-size: 12px;
+        padding: 6px 10px; /* Reduce padding for smaller screens */
+    }
 }
 
 /* Tablet Styles */
@@ -736,7 +827,7 @@ body {
 
     /* Adjust Folder Name Font Size */
     .folder-name {
-        font-size: 16px;
+        font-size: 14px; /* Further reduced to fit longer names */
     }
 
     /* Adjust Note Title Font Size */
@@ -765,39 +856,83 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background-color: #c53d3d; /* Orange color to grab attention */
+    background-color: #c53d3d; /* Red color to grab attention */
     color: white;
     text-align: center;
     padding: 10px;
-    z-index: 1000; /* Ensure it stays on top of other elements */
+    z-index: 2000; /* Ensure it stays on top of other elements */
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-  
-  .offline-alert p {
+}
+
+.offline-alert p {
     margin: 0;
-  }
-  
-  /* Save Indicator Styling */
+}
+
+/* Save Indicator Styling */
 .save-indicator {
     position: fixed;
-    bottom: 20px; /* Adjust as needed */
+    bottom: 20px;
     right: 20px;
     background-color: #4caf50; /* Green color when saved */
     color: white;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 4px;
-    z-index: 1000;
-    font-size: 14px;
+    z-index: 2000; /* Increased z-index to ensure visibility above sidebar and dropdowns */
+    font-size: 11px;
     transition: background-color 0.3s, opacity 0.3s;
-    opacity: 0; /* Start as invisible */
-  }
-  
-  .save-indicator.visible {
-    opacity: 1; /* Show when active */
-  }
-  
-  .save-indicator.saving {
+    opacity: 1; /* Set visible by default */
+}
+
+.save-indicator.saving {
     background-color: #ff9800; /* Orange color when saving */
-  }
-  
+}
+
+/* Dropdown Positioning Fix for Three-Dots Menu */
+.folder-dots,
+.note-dots {
+    position: relative; /* Set relative to adjust dropdown accordingly */
+}
+
+.folder-dropdown-container,
+.note-dropdown-container {
+    position: absolute;
+    top: 100%; /* Directly below the dots button */
+    right: 0; /* Align to the right edge of the dots button */
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    z-index: 2000; /* Increased to ensure visibility above sidebar and other elements */
+    display: none; /* Hidden by default */
+    min-width: 120px; /* Ensure a minimum width */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.folder-dropdown-container.show-dropdown,
+.note-dropdown-container.show-dropdown {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Fix for Dropdown Position when Collection is Expanded */
+.folder-header-content {
+    position: relative;
+}
+
+/* Mobile Styles Adjustment for Profile and Dropdown */
+@media (max-width: 768px) {
+    /* Profile Section Adjustment for Mobile */
+    .profile-section {
+        top: 15px;
+        right: 15px;
+    }
+
+    /* Dropdown Adjustment for Mobile */
+    .folder-dropdown-container,
+    .note-dropdown-container {
+        min-width: 100px; /* Reduce minimum width for smaller screens */
+    }
+}
