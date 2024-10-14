@@ -21,7 +21,7 @@ import {
   startAfter,
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthProvider';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
@@ -47,7 +47,7 @@ import Underline from '@tiptap/extension-underline';
 import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
 import { getAuth, signOut } from 'firebase/auth';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext } from 'react-beautiful-dnd';
 import { useNavigate } from 'react-router-dom';
 
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -58,13 +58,13 @@ import imageCompression from 'browser-image-compression';
 // Import a loading spinner library or use CSS-based spinner
 import { ClipLoader } from 'react-spinners'; // Ensure you have react-spinners installed
 
-Modal.setAppElement('#root');
+Modal.setAppElement('#root'); // Important for accessibility
 
 const NotesPage = () => {
   const [textColor, setTextColor] = useState('');
   const { user } = useAuth();
   const [folders, setFolders] = useState([]);
-  const [selectedFolder, setSelectedFolder] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState(''); // Holds the ID of the selected folder
   const [folderName, setFolderName] = useState('');
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
@@ -112,15 +112,18 @@ const NotesPage = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // States for per-folder pagination and loading
-  const [notesData, setNotesData] = useState({}); // { [folderId]: [note1, note2, ...] }
+  const [notesData, setNotesData] = useState({}); // { [folderId]: [notes] }
   const [perFolderLoadingNotes, setPerFolderLoadingNotes] = useState({}); // { [folderId]: boolean }
   const [perFolderHasMoreNotes, setPerFolderHasMoreNotes] = useState({}); // { [folderId]: boolean }
   const [lastVisibleNote, setLastVisibleNote] = useState({}); // { [folderId]: lastVisibleDoc }
 
   // New loading states
-  const [isLoadingFolders, setIsLoadingFolders] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
+
+  // Pagination Limits
+  const initialLimit = 10;
+  const loadMoreLimit = 10;
 
   // Editor setup
   const editor = useEditor({
@@ -384,11 +387,14 @@ const NotesPage = () => {
           await deleteDoc(doc(db, 'notes', activeNote.id));
           console.log('Empty note deleted:', activeNote.id);
           setNotesData((prevNotes) => {
-            const folderNotes = prevNotes[activeNote.folderId] || [];
-            return {
-              ...prevNotes,
-              [activeNote.folderId]: folderNotes.filter((note) => note.id !== activeNote.id),
-            };
+            const folderId = activeNote.folderId;
+            const updatedNotes = { ...prevNotes };
+            if (folderId) {
+              updatedNotes[folderId] = updatedNotes[folderId].filter((note) => note.id !== activeNote.id);
+            } else {
+              updatedNotes['unassigned'] = updatedNotes['unassigned'].filter((note) => note.id !== activeNote.id);
+            }
+            return updatedNotes;
           });
           setActiveNote(null);
           if (editor) {
@@ -463,12 +469,13 @@ const NotesPage = () => {
 
   // Delete note function
   const handleDeleteNote = async (noteId, requireConfirmation = true) => {
-    if (requireConfirmation) {
-      if (
-        !window.confirm('Are you sure you want to delete this note? This action cannot be undone.')
+    if (
+      requireConfirmation &&
+      !window.confirm(
+        'Are you sure you want to delete this note? This action cannot be undone.'
       )
-        return;
-    }
+    )
+      return;
 
     try {
       await deleteDoc(doc(db, 'notes', noteId));
@@ -504,8 +511,6 @@ const NotesPage = () => {
   useEffect(() => {
     if (!user) return;
 
-    setIsLoadingFolders(true); // Start loading folders
-
     // Query only folders belonging to the authenticated user
     const foldersQuery = query(
       collection(db, 'folders'),
@@ -520,19 +525,21 @@ const NotesPage = () => {
           ...doc.data(),
         }));
         setFolders(foldersData);
-        setIsLoadingFolders(false); // Stop loading folders
+        console.log('Folders fetched:', foldersData.length);
 
-        // Fetch notes for each folder
-        foldersData.forEach((folder) => {
-          if (!notesData[folder.id]) {
-            fetchNotes(folder.id);
-          }
-        });
+        // No longer fetch notes for all folders on load
+        // Notes will be fetched when a folder is expanded
+
+        // Ensure 'Unassigned' folder is always present
+        if (!foldersData.some((folder) => folder.id === 'unassigned')) {
+          // Optionally, create 'Unassigned' folder if it doesn't exist
+          // For now, we'll assume it's handled elsewhere
+          console.warn("'Unassigned' folder is missing.");
+        }
       },
       (error) => {
         console.error('Error fetching folders:', error);
         alert('Failed to fetch folders. Please try again.');
-        setIsLoadingFolders(false);
       }
     );
 
@@ -543,33 +550,43 @@ const NotesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Fetch notes per folder
-  const fetchNotes = (folderId) => {
-    setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: true }));
+  // Fetch notes when selectedFolder changes
+  useEffect(() => {
+    if (!selectedFolder) return; // Do nothing if no folder is selected
 
-    let notesQuery;
-    if (folderId) {
-      notesQuery = query(
-        collection(db, 'notes'),
-        where('userId', '==', user.uid),
-        where('folderId', '==', folderId),
-        orderBy('createdAt', 'desc'),
-        limit(5) // Load five notes initially
-      );
-    } else {
-      // For 'Unassigned' folder (folderId is null)
-      notesQuery = query(
-        collection(db, 'notes'),
-        where('userId', '==', user.uid),
-        where('folderId', '==', null),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      );
+    // If notes for the selected folder are already fetched, do not fetch again
+    if (notesData[selectedFolder]) {
+      console.log(`Notes for folder ${selectedFolder} already fetched.`);
+      return;
     }
 
-    const unsubscribe = onSnapshot(
-      notesQuery,
-      (snapshot) => {
+    // Fetch notes for the selected folder
+    const fetchNotesForFolder = async () => {
+      console.log(`Fetching notes for folder: ${selectedFolder}`);
+      setPerFolderLoadingNotes((prev) => ({ ...prev, [selectedFolder]: true }));
+
+      try {
+        let notesQuery;
+        if (selectedFolder !== 'unassigned') {
+          notesQuery = query(
+            collection(db, 'notes'),
+            where('userId', '==', user.uid),
+            where('folderId', '==', selectedFolder),
+            orderBy('createdAt', 'desc'),
+            limit(initialLimit) // Load ten notes initially
+          );
+        } else {
+          // For 'Unassigned' folder
+          notesQuery = query(
+            collection(db, 'notes'),
+            where('userId', '==', user.uid),
+            where('folderId', '==', null),
+            orderBy('createdAt', 'desc'),
+            limit(initialLimit) // Load ten notes initially
+          );
+        }
+
+        const snapshot = await getDocs(notesQuery);
         const fetchedNotes = snapshot.docs.map((doc) => ({
           id: doc.id,
           title: doc.data().title,
@@ -582,48 +599,50 @@ const NotesPage = () => {
 
         setNotesData((prevNotes) => ({
           ...prevNotes,
-          [folderId]: fetchedNotes,
+          [selectedFolder]: fetchedNotes,
         }));
 
-        if (snapshot.docs.length === 5) {
-          setPerFolderHasMoreNotes((prev) => ({ ...prev, [folderId]: true }));
+        if (snapshot.docs.length === initialLimit) {
+          setPerFolderHasMoreNotes((prev) => ({ ...prev, [selectedFolder]: true }));
           setLastVisibleNote((prev) => ({
             ...prev,
-            [folderId]: snapshot.docs[snapshot.docs.length - 1],
+            [selectedFolder]: snapshot.docs[snapshot.docs.length - 1],
           }));
         } else {
-          setPerFolderHasMoreNotes((prev) => ({ ...prev, [folderId]: false }));
-          setLastVisibleNote((prev) => ({ ...prev, [folderId]: null }));
+          setPerFolderHasMoreNotes((prev) => ({ ...prev, [selectedFolder]: false }));
+          setLastVisibleNote((prev) => ({ ...prev, [selectedFolder]: null }));
         }
 
-        setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: false }));
-      },
-      (error) => {
+        console.log(`Fetched ${fetchedNotes.length} notes for folder: ${selectedFolder}`);
+      } catch (error) {
         console.error('Error fetching notes:', error);
         alert('Failed to fetch notes. Please try again.');
-        setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: false }));
+      } finally {
+        setPerFolderLoadingNotes((prev) => ({ ...prev, [selectedFolder]: false }));
       }
-    );
+    };
 
-    return unsubscribe;
-  };
+    fetchNotesForFolder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFolder]);
 
   // Load more notes per folder
   const loadMoreNotes = async (folderId) => {
     if (!lastVisibleNote[folderId] || perFolderLoadingNotes[folderId]) return;
 
+    console.log(`Loading more notes for folder: ${folderId}`);
     setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: true }));
 
     try {
       let moreNotesQuery;
-      if (folderId) {
+      if (folderId !== 'unassigned') {
         moreNotesQuery = query(
           collection(db, 'notes'),
           where('userId', '==', user.uid),
           where('folderId', '==', folderId),
           orderBy('createdAt', 'desc'),
           startAfter(lastVisibleNote[folderId]),
-          limit(5) // Load five more notes
+          limit(loadMoreLimit) // Load ten more notes
         );
       } else {
         // For 'Unassigned' folder
@@ -633,7 +652,7 @@ const NotesPage = () => {
           where('folderId', '==', null),
           orderBy('createdAt', 'desc'),
           startAfter(lastVisibleNote[folderId]),
-          limit(5)
+          limit(loadMoreLimit) // Load ten more notes
         );
       }
 
@@ -653,7 +672,7 @@ const NotesPage = () => {
         [folderId]: [...(prevNotes[folderId] || []), ...newNotes],
       }));
 
-      if (snapshot.docs.length === 5) {
+      if (snapshot.docs.length === loadMoreLimit) {
         setPerFolderHasMoreNotes((prev) => ({ ...prev, [folderId]: true }));
         setLastVisibleNote((prev) => ({
           ...prev,
@@ -664,10 +683,11 @@ const NotesPage = () => {
         setLastVisibleNote((prev) => ({ ...prev, [folderId]: null }));
       }
 
-      setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: false }));
+      console.log(`Loaded ${newNotes.length} more notes for folder: ${folderId}`);
     } catch (error) {
       console.error('Error loading more notes:', error);
       alert('Failed to load more notes. Please try again.');
+    } finally {
       setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: false }));
     }
   };
@@ -806,6 +826,11 @@ const NotesPage = () => {
       setNotesData((prevNotes) => {
         const updatedNotes = { ...prevNotes };
         delete updatedNotes[folderId];
+        // Ensure 'unassigned' folder is fetched if needed
+        if (!updatedNotes['unassigned']) {
+          // Optional: Fetch 'unassigned' notes if necessary
+          console.warn("'Unassigned' folder is missing in notesData.");
+        }
         return updatedNotes;
       });
 
@@ -874,7 +899,7 @@ const NotesPage = () => {
         // Add the note to the new folder at the top
         if (movedNote) {
           movedNote.folderId = newFolderId || null;
-          const targetFolderId = newFolderId || 'null';
+          const targetFolderId = newFolderId || 'unassigned';
           updatedNotes[targetFolderId] = [
             movedNote,
             ...(updatedNotes[targetFolderId] || []),
@@ -1075,7 +1100,7 @@ const NotesPage = () => {
         )}
 
         {/* Save Indicator */}
-        <div className="save-indicator">
+        <div className={`save-indicator ${!isSaved ? 'saving' : ''}`}>
           {isSaved ? 'All changes saved' : 'Saving...'}
         </div>
 
@@ -1140,10 +1165,7 @@ const NotesPage = () => {
           selectedFolder={selectedFolder}
           setSelectedFolder={(folderId) => {
             setSelectedFolder(folderId);
-            // Fetch notes for the new folder if not already fetched
-            if (!notesData[folderId]) {
-              fetchNotes(folderId);
-            }
+            // Notes are fetched via useEffect when selectedFolder changes
           }}
           isFolderDropdownOpen={isFolderDropdownOpen}
           setIsFolderDropdownOpen={setIsFolderDropdownOpen}
@@ -1164,46 +1186,48 @@ const NotesPage = () => {
 
         {/* Modal for Adding/Editing Folders */}
         <Modal
-  isOpen={isFolderModalOpen}
-  onRequestClose={() => setIsFolderModalOpen(false)}
-  contentLabel={editingFolder ? 'Edit Folder' : 'Add Folder'}
-  className="modal-content" // Align with .modal-content in CSS
-  overlayClassName="ReactModal__Overlay" // Align with .ReactModal__Overlay in CSS
->
-  <div className="folder-modal-content"> {/* Align with .folder-modal-content in CSS */}
-    <h2>{editingFolder ? 'Edit Folder' : 'Add Folder'}</h2>
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (editingFolder) {
-          handleRenameFolder();
-        } else {
-          handleAddFolder();
-        }
-      }}
-    >
-      <input
-        type="text"
-        value={editingFolder ? editFolderName : folderName}
-        onChange={(e) =>
-          editingFolder ? setEditFolderName(e.target.value) : setFolderName(e.target.value)
-        }
-        placeholder="Folder Name"
-        required
-        className="folder-name-input" // Align with .folder-name-input in CSS
-        ref={titleInputRef}
-      />
-      <div className="modal-buttons"> {/* Align with .modal-buttons in CSS */}
-        <button type="submit" className="save-button" disabled={isCreatingFolder}>
-          {isCreatingFolder ? 'Saving...' : 'Save'}
-        </button>
-        <button type="button" className="cancel-button" onClick={() => setIsFolderModalOpen(false)}>
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-</Modal>
+          isOpen={isFolderModalOpen}
+          onRequestClose={() => setIsFolderModalOpen(false)}
+          contentLabel={editingFolder ? 'Edit Folder' : 'Add Folder'}
+          className="modal-content" // Matches .modal-content in CSS
+          overlayClassName="ReactModal__Overlay" // Matches .ReactModal__Overlay in CSS
+        >
+          <div className="folder-modal-content"> {/* Matches .folder-modal-content in CSS */}
+            <h2>{editingFolder ? 'Edit Folder' : 'Add Folder'}</h2>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editingFolder) {
+                  handleRenameFolder();
+                } else {
+                  handleAddFolder();
+                }
+              }}
+            >
+              <input
+                type="text"
+                value={editingFolder ? editFolderName : folderName}
+                onChange={(e) =>
+                  editingFolder ? setEditFolderName(e.target.value) : setFolderName(e.target.value)
+                }
+                placeholder="Folder Name"
+                required
+                className="folder-name-input" // Matches .folder-name-input in CSS
+                ref={titleInputRef}
+                autoFocus // Automatically focus on input when modal opens
+              />
+              <div className="modal-buttons"> {/* Matches .modal-buttons in CSS */}
+                <button type="submit" className="save-button" disabled={isCreatingFolder}>
+                  {isCreatingFolder ? 'Saving...' : 'Save'}
+                </button>
+                <button type="button" className="cancel-button" onClick={() => setIsFolderModalOpen(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+
         {/* Notes Editor Section */}
         {activeNote ? (
           <NoteEditor
