@@ -28,8 +28,9 @@
     "@tiptap/extension-underline": "^2.8.0",
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",
+    "browser-image-compression": "^2.0.2",
     "dompurify": "^3.1.7",
-    "firebase": "^10.14.0",
+    "firebase": "^10.14.1",
     "html-to-text": "^9.0.5",
     "html-truncate": "^1.2.2",
     "quill-image-resize-module": "^3.0.0",
@@ -42,6 +43,7 @@
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.26.2",
     "react-scripts": "4.0.3",
+    "react-spinners": "^0.14.1",
     "use-debounce": "^10.0.3",
     "web-vitals": "^2.1.4"
   },

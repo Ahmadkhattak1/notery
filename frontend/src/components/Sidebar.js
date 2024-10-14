@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { ClipLoader } from 'react-spinners'; // Ensure you have react-spinners installed
 
 const Sidebar = React.forwardRef((props, ref) => {
   const {
@@ -11,7 +12,7 @@ const Sidebar = React.forwardRef((props, ref) => {
     handleAddNote,
     openAddFolderModal,
     openNote,
-    notes,
+    notes, // Object: { [folderId]: [notes] }
     activeNote,
     selectedFolder,
     setSelectedFolder,
@@ -26,20 +27,22 @@ const Sidebar = React.forwardRef((props, ref) => {
     isNoteDropdownOpen,
     setIsNoteDropdownOpen,
     handleDeleteNote,
-    isCreatingNote, // Added prop
+    isCreatingNote, // Boolean
+    perFolderLoadingNotes, // Object: { [folderId]: boolean }
+    perFolderHasMoreNotes, // Object: { [folderId]: boolean }
+    loadMoreNotes, // Function: (folderId) => void
   } = props;
 
   // Function to toggle folder dropdown
   const toggleFolderDropdown = (folderId) => {
     if (isFolderDropdownOpen && selectedFolderDropdown === folderId) {
-        setIsFolderDropdownOpen(false);
-        setSelectedFolderDropdown(null);
+      setIsFolderDropdownOpen(false);
+      setSelectedFolderDropdown(null);
     } else {
-        setIsFolderDropdownOpen(true);
-        setSelectedFolderDropdown(folderId);
+      setIsFolderDropdownOpen(true);
+      setSelectedFolderDropdown(folderId);
     }
-};
-
+  };
 
   // Function to toggle note dropdown
   const toggleNoteDropdown = (noteId) => {
@@ -95,7 +98,7 @@ const Sidebar = React.forwardRef((props, ref) => {
                 className="add-note-icon"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleAddNote();
+                  handleAddNote(folder.id); // Pass folderId
                   setSelectedFolder(folder.id);
                 }}
                 title="Add Note"
@@ -155,84 +158,111 @@ const Sidebar = React.forwardRef((props, ref) => {
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                   >
-                    {notes
-                      .filter((note) => note.folderId === folder.id)
-                      .map((note, index) => (
-                        <Draggable
-                          key={note.id || `new-${index}`} // Fixed key
-                          draggableId={note.id || `new-${index}`} // Fixed draggableId
-                          index={index}
-                        >
-                          {(provided) => (
-                            <li
-                              className={`note-title-item ${
-                                activeNote && activeNote.id === note.id
-                                  ? 'active-note'
-                                  : ''
-                              }`}
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
+                    {notes[folder.id] && notes[folder.id].map((note, index) => (
+                      <Draggable
+                        key={note.id}
+                        draggableId={note.id}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <li
+                            className={`note-title-item ${
+                              activeNote && activeNote.id === note.id
+                                ? 'active-note'
+                                : ''
+                            }`}
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <span
+                              className="note-title"
+                              onClick={() => openNote(note)}
                             >
-                              <span
-                                className="note-title"
-                                onClick={() => openNote(note)}
-                              >
-                                {note.title || 'Untitled Note'}
-                              </span>
-                              
-                              {/* Wrapper for Note Dots Button and Dropdown */}
-                              <div className="dropdown-wrapper">
-                                {/* 3-Dot Dropdown for Notes */}
-                                <button
-                                  className="note-dots"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleNoteDropdown(note.id);
-                                  }}
-                                  aria-label="Note Options"
-                                  aria-haspopup="true"
-                                  aria-expanded={isNoteDropdownOpen && selectedNoteDropdown === note.id}
-                                >
-                                  ⋮
-                                </button>
+                              {note.title || 'Untitled Note'}
+                            </span>
 
-                                {/* Dropdown for Note Actions */}
-                                {isNoteDropdownOpen && selectedNoteDropdown === note.id && (
-                                  <div className="note-dropdown-container show-dropdown">
-                                    <ul>
-                                      <li
-                                        onClick={() => {
-                                          openNote(note);
-                                          setIsNoteDropdownOpen(false);
-                                        }}
-                                      >
-                                        Edit
-                                      </li>
-                                      <li
-                                        onClick={() => {
-                                          handleDeleteNote(note.id);
-                                          setIsNoteDropdownOpen(false);
-                                        }}
-                                      >
-                                        Delete
-                                      </li>
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            </li>
+                            {/* Wrapper for Note Dots Button and Dropdown */}
+                            <div className="dropdown-wrapper">
+                              {/* 3-Dot Dropdown for Notes */}
+                              <button
+                                className="note-dots"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleNoteDropdown(note.id);
+                                }}
+                                aria-label="Note Options"
+                                aria-haspopup="true"
+                                aria-expanded={isNoteDropdownOpen && selectedNoteDropdown === note.id}
+                              >
+                                ⋮
+                              </button>
+
+                              {/* Dropdown for Note Actions */}
+                              {isNoteDropdownOpen && selectedNoteDropdown === note.id && (
+                                <div className="note-dropdown-container show-dropdown">
+                                  <ul>
+                                    <li
+                                      onClick={() => {
+                                        openNote(note);
+                                        setIsNoteDropdownOpen(false);
+                                      }}
+                                    >
+                                      Edit
+                                    </li>
+                                    <li
+                                      onClick={() => {
+                                        handleDeleteNote(note.id);
+                                        setIsNoteDropdownOpen(false);
+                                      }}
+                                    >
+                                      Delete
+                                    </li>
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        )}
+                      </Draggable>
+                    ))}
+
+                    {/* Load More Button */}
+                    {perFolderHasMoreNotes[folder.id] && (
+                      <li className="load-more-container">
+                        <button
+                          className="load-more-button"
+                          onClick={() => loadMoreNotes(folder.id)}
+                          disabled={perFolderLoadingNotes[folder.id]}
+                        >
+                          {perFolderLoadingNotes[folder.id] ? (
+                            <>
+                              <ClipLoader color="#123abc" loading={perFolderLoadingNotes[folder.id]} size={15} />{' '}
+                              Loading...
+                            </>
+                          ) : (
+                            'Load More'
                           )}
-                        </Draggable>
-                      ))}
+                        </button>
+                      </li>
+                    )}
+
+                    {/* Loading Indicator for Notes */}
+                    {perFolderLoadingNotes[folder.id] && (
+                      <li className="notes-loading-indicator">
+                        <ClipLoader color="#123abc" loading={perFolderLoadingNotes[folder.id]} size={30} />
+                        <p>Loading more notes...</p>
+                      </li>
+                    )}
+
                     {provided.placeholder}
                   </ul>
                 )}
               </Droppable>
             )}
-          </li> 
+          </li>
         ))}
-      </ul> 
+      </ul>
     </div>
   );
 });
