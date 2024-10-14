@@ -159,7 +159,7 @@ const NotesPage = () => {
       CustomHeading,
       CustomParagraph,
     ],
-    content: '<h1></h1><p></p>',
+    content: '<h1></h1>',
     editorProps: {
       attributes: {
         class: 'editor-content',
@@ -398,7 +398,7 @@ const NotesPage = () => {
           });
           setActiveNote(null);
           if (editor) {
-            editor.commands.setContent('<h1></h1><p></p>');
+            editor.commands.setContent('<h1></h1>');
           }
         } catch (error) {
           console.error('Error deleting empty note:', error);
@@ -407,7 +407,7 @@ const NotesPage = () => {
       } else {
         setActiveNote(null);
         if (editor) {
-          editor.commands.setContent('<h1></h1><p></p>');
+          editor.commands.setContent('<h1></h1>');
         }
       }
     }
@@ -444,7 +444,7 @@ const NotesPage = () => {
         };
         setActiveNote(fullNote);
         if (editor) {
-          editor.commands.setContent(fullNote.content || '<h1></h1><p></p>');
+          editor.commands.setContent(fullNote.content || '<h1></h1>');
           console.log('Opened note:', fullNote.id);
         }
 
@@ -458,7 +458,7 @@ const NotesPage = () => {
         alert('The selected note does not exist.');
         setActiveNote(null);
         if (editor) {
-          editor.commands.setContent('<h1></h1><p></p>');
+          editor.commands.setContent('<h1></h1>');
         }
       }
     } catch (error) {
@@ -497,7 +497,7 @@ const NotesPage = () => {
       if (activeNote && activeNote.id === noteId) {
         setActiveNote(null);
         if (editor) {
-          editor.commands.setContent('<h1></h1><p></p>');
+          editor.commands.setContent('<h1></h1>');
           console.log('Editor content reset after deletion.');
         }
       }
@@ -723,7 +723,7 @@ const NotesPage = () => {
       }));
 
       setActiveNote(newNote);
-      editor.commands.setContent('<h1></h1><p></p>');
+      editor.commands.setContent('<h1></h1>');
       console.log('New untitled note initialized.');
 
       if (window.innerWidth <= 768) {
