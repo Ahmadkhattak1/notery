@@ -1,0 +1,477 @@
+/* Sidebar.css */
+
+/* Sidebar Styling */
+
+/* Collections Sidebar */
+.collections-sidebar {
+    width: 250px;
+    background-color: #f5f7fa; /* Light neutral background */
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease-in-out, width 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 90vh;
+    box-sizing: border-box;
+    z-index: 1000;
+    position: relative;
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Custom Scrollbar Styling */
+
+/* WebKit (Chrome, Safari) */
+.collections-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.collections-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.collections-sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.collections-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient Overlay to Indicate More Content */
+.collections-sidebar::after {
+    /* Existing styles... */
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.sidebar-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2193b0; /* Primary color */
+    text-align: left;
+    margin: 0;
+}
+
+/* Toggle Sidebar Button */
+.toggle-sidebar-button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #2193b0;
+    transition: transform 0.3s ease;
+}
+
+.toggle-sidebar-button:hover {
+    transform: rotate(180deg);
+}
+
+/* Improved Add Folder Button */
+.add-folder-button {
+    background-color: #2193b0;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.add-folder-button:hover {
+    background-color: #197a96;
+    transform: translateY(-2px);
+}
+
+.add-icon {
+    font-size: 16px;
+}
+
+/* Folders List */
+.folders-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    word-wrap: break-word;
+}
+
+/* Folder Item */
+.folder-item {
+    position: relative;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Folder Header */
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.folder-header:hover {
+    background-color: #f0f0f0;
+}
+
+.folder-name {
+    flex-grow: 1;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.folder-toggle {
+    font-size: 14px;
+    color: #333333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+/* Folder Dropdown */
+.folder-dots {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #888888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 4px;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.folder-dots:hover {
+    color: #2193b0;
+    background-color: #e0f7fa;
+    transform: rotate(90deg);
+}
+
+.folder-dropdown-container {
+    position: absolute;
+    top: 100%;
+    right: 15px;
+    background-color: #ffffff;
+    color: #2193b0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    z-index: 2000;
+    display: none;
+    min-width: 120px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.folder-dropdown-container.show-dropdown {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.folder-dropdown-container ul {
+    list-style: none;
+    margin: 0;
+    padding: 10px 0;
+}
+
+.folder-dropdown-container li {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.folder-dropdown-container li:hover {
+    background-color: #e0f7fa;
+}
+
+.dropdown-icon {
+    font-size: 14px;
+    color: #2193b0;
+}
+
+/* Notes List */
+.notes-list {
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+}
+
+/* Note Item */
+.note-title-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    position: relative;
+    width: 100%;
+    transition: background-color 0.2s ease;
+}
+
+.note-title-item:hover {
+    background-color: #f0f0f0;
+}
+
+.note-title {
+    font-size: 16px;
+    color: #333333;
+    flex-grow: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.active-note {
+    background-color: #e0f7fa; /* Highlight with secondary color */
+}
+
+/* Add Note Icon */
+.add-note-icon {
+    background-color: #2193b0;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.add-note-icon:hover {
+    background-color: #197a96;
+}
+
+/* Note Dropdown */
+.note-dots {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #888888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.note-dots:hover {
+    color: #2193b0;
+    background-color: #e0f7fa;
+    transform: rotate(90deg);
+}
+
+.note-dropdown-container {
+    position: absolute;
+    top: 100%;
+    right: 15px;
+    background-color: #ffffff;
+    color: #2193b0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    z-index: 2000;
+    display: none;
+    min-width: 120px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.note-dropdown-container.show-dropdown {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.note-dropdown-container ul {
+    list-style: none;
+    margin: 0;
+    padding: 10px 0;
+}
+
+.note-dropdown-container li {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.note-dropdown-container li:hover {
+    background-color: #e0f7fa;
+}
+
+/* Load More Button */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.load-more-button {
+    background-color: #2193b0;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.load-more-button:hover {
+    background-color: #197a96;
+    transform: translateY(-2px);
+}
+
+.load-more-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Loading Indicator */
+.notes-loading-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.notes-loading-indicator p {
+    margin-top: 5px;
+    color: #666666;
+    font-size: 14px;
+}
+
+/* Responsive Design for Sidebar */
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .collections-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 250px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1500;
+    }
+
+    .collections-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .collections-sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-header h2 {
+        margin-top: 60px;
+    }
+
+    .folder-dots,
+    .note-dots {
+        padding: 5px;
+        font-size: 18px;
+    }
+
+    .toggle-sidebar-button {
+        display: block;
+    }
+
+    .collections-sidebar.has-overflow::after {
+        display: block;
+    }
+}
+
+/* Tablet Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .collections-sidebar {
+        width: 250px;
+    }
+
+    .sidebar-header h2 {
+        font-size: 20px;
+    }
+
+    .add-folder-button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .folder-name,
+    .note-title {
+        font-size: 14px;
+    }
+
+    .toggle-sidebar-button {
+        display: none;
+    }
+
+    .collections-sidebar.has-overflow::after {
+        display: block;
+    }
+}
+
+/* Desktop Styles */
+@media (min-width: 1025px) {
+    .toggle-sidebar-button {
+        display: none;
+    }
+
+    .collections-sidebar.has-overflow::after {
+        display: block;
+    }
+}
