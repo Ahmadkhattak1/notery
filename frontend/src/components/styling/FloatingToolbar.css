@@ -4,14 +4,14 @@
   position: absolute;
   display: flex;
   flex-wrap: wrap;
-  background-color: #ffffff;
+  background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 9999;
-  animation: fadeIn 0.3s ease-out;
-  transition: all 0.3s ease;
+  animation: fadeIn 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {
@@ -37,64 +37,135 @@
   align-items: center;
   position: relative;
   border-radius: 4px;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .floating-toolbar button:hover {
-  background-color: #f5f5f5;
-  transform: translateY(-2px);
+  background-color: #f0f0f0;
 }
 
 .floating-toolbar button.is-active {
   background-color: #e0e0e0;
+  color: #000;
 }
 
-.floating-toolbar .color-picker-container {
+.floating-toolbar .heading-label {
+  margin-left: 4px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.paragraph-dropdown-container,
+.align-dropdown-container {
   position: relative;
 }
 
-.floating-toolbar .color-picker-popup {
+.paragraph-dropdown-container button,
+.align-dropdown-container button {
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-icon {
+  margin-left: 4px;
+}
+
+.paragraph-dropdown-popup,
+.align-dropdown-popup {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: repeat(6, 32px);
-  gap: 8px;
-  background-color: #ffffff;
+  background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 10000;
-  animation: slideIn 0.3s ease-out;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-@keyframes slideIn {
+.paragraph-dropdown-popup button,
+.align-dropdown-popup button {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 14px;
+  color: #555;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.paragraph-dropdown-popup button:hover,
+.align-dropdown-popup button:hover {
+  background-color: #f0f0f0;
+}
+
+.paragraph-dropdown-popup button.is-active,
+.align-dropdown-popup button.is-active {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+.paragraph-dropdown-popup button span,
+.align-dropdown-popup button span {
+  margin-left: 6px;
+}
+
+/* Color Picker Styles */
+.color-picker-container,
+.bg-color-picker-container {
+  position: relative;
+}
+
+.color-picker-popup,
+.bg-color-picker-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(6, 28px);
+  gap: 6px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px) translateX(-50%);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0) translateX(-50%);
+    transform: translateY(0) scale(1);
   }
 }
 
-.floating-toolbar .color-picker-popup::before {
+.color-picker-popup::before,
+.bg-color-picker-popup::before {
   content: '';
   position: absolute;
-  top: -6px;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 0 6px 6px 6px;
+  border-width: 0 8px 8px 8px;
   border-style: solid;
   border-color: transparent transparent #ddd transparent;
 }
 
-.floating-toolbar .color-button {
-  width: 32px;
-  height: 32px;
+.color-button,
+.bg-color-button {
+  width: 28px;
+  height: 28px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -102,94 +173,43 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.floating-toolbar .color-button:hover {
+.color-button:hover,
+.bg-color-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px #555;
 }
 
-.floating-toolbar .color-button:focus {
-  outline: none;
-}
-
-.floating-toolbar .color-check-icon {
+.color-check-icon,
+.bg-color-check-icon {
   position: absolute;
   top: 4px;
   right: 4px;
-  color: #ffffff;
+  color: #fff;
   font-size: 12px;
 }
 
-.heading-level {
-  margin-left: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.align-dropdown-container {
-  position: relative;
-}
-
-.align-dropdown-container .dropdown-icon {
-  margin-left: 4px;
-}
-
-.align-dropdown-popup {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
-  animation: fadeInDropdown 0.3s ease-out;
-}
-
-@keyframes fadeInDropdown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) translateX(-50%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateX(-50%);
-  }
-}
-
-.align-dropdown-popup button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px 8px;
-  margin: 4px 0;
-  font-size: 14px;
-  color: #555;
-  display: flex;
-  align-items: center;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.align-dropdown-popup button:hover {
-  background-color: #f5f5f5;
-  transform: translateX(2px);
-}
-
-.align-dropdown-popup button.is-active {
-  background-color: #e0e0e0;
-}
-
-@media (max-width: 768px) {
+/* Responsive Design */
+@media (max-width: 600px) {
   .floating-toolbar {
-    max-width: 90%;
-    left: 50%;
-    transform: translateX(-50%);
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 8px;
   }
 
-  .floating-toolbar .color-picker-popup,
-  .floating-toolbar .align-dropdown-popup {
+  .floating-toolbar button {
+    flex: 0 0 auto;
+    padding: 6px;
+    margin: 0 2px 2px 0;
+    font-size: 14px;
+  }
+
+  .color-picker-popup,
+  .bg-color-picker-popup {
+    grid-template-columns: repeat(4, 28px);
+  }
+
+  .paragraph-dropdown-popup,
+  .align-dropdown-popup {
     left: 50%;
     transform: translateX(-50%);
   }

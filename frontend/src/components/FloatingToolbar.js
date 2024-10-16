@@ -10,6 +10,7 @@ import {
   faUnderline,
   faStrikethrough,
   faCode,
+  faParagraph,
   faHeading,
   faListUl,
   faListOl,
@@ -20,6 +21,7 @@ import {
   faPalette,
   faCheck,
   faChevronDown,
+  faHighlighter,
 } from '@fortawesome/free-solid-svg-icons';
 
 const FloatingToolbar = ({ editor }) => {
@@ -27,10 +29,12 @@ const FloatingToolbar = ({ editor }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showAlignDropdown, setShowAlignDropdown] = useState(false);
+  const [showParagraphDropdown, setShowParagraphDropdown] = useState(false);
 
   // Define the specific color options provided
-  const colorOptions = [
+  const textColorOptions = [
     { name: 'Black', color: '#000000' },
     { name: 'Dark Gray', color: '#4D4D4D' },
     { name: 'Gray', color: '#9B9A97' },
@@ -43,6 +47,18 @@ const FloatingToolbar = ({ editor }) => {
     { name: 'Purple', color: '#6940A5' },
     { name: 'Pink', color: '#AD1A72' },
     { name: 'Brown', color: '#64473A' },
+  ];
+
+  const bgColorOptions = [
+    { name: 'Grey', color: '#F1F1EF' },
+    { name: 'Brown', color: '#F4EEEE' },
+    { name: 'Orange', color: '#FAEBDD' },
+    { name: 'Yellow', color: '#FBF3DB' },
+    { name: 'Green', color: '#EDF3EC' },
+    { name: 'Blue', color: '#E7F3F8' },
+    { name: 'Purple', color: '#F6F3F9' },
+    { name: 'Pink', color: '#FAF1F5' },
+    { name: 'Red', color: '##FDEBEC' },
   ];
 
   const updateToolbar = () => {
@@ -66,10 +82,10 @@ const FloatingToolbar = ({ editor }) => {
       right: Math.max(start.right, end.right),
     };
 
-    const toolbarWidth = toolbarRef.current?.offsetWidth || 250;
+    const toolbarWidth = toolbarRef.current?.offsetWidth || 400;
     const toolbarHeight = toolbarRef.current?.offsetHeight || 40;
 
-    let top = selectionRect.top - toolbarHeight - 10; // Increased spacing
+    let top = selectionRect.top - toolbarHeight - 10;
     let left = (selectionRect.left + selectionRect.right) / 2 - toolbarWidth / 2;
 
     // Adjust position to keep toolbar within viewport
@@ -105,14 +121,13 @@ const FloatingToolbar = ({ editor }) => {
   }, [editor]);
 
   useEffect(() => {
-    // Close color picker and alignment dropdown when clicking outside
+    // Close pickers when clicking outside
     const handleClickOutside = (event) => {
-      if (
-        toolbarRef.current &&
-        !toolbarRef.current.contains(event.target)
-      ) {
+      if (toolbarRef.current && !toolbarRef.current.contains(event.target)) {
         setShowColorPicker(false);
+        setShowBgColorPicker(false);
         setShowAlignDropdown(false);
+        setShowParagraphDropdown(false);
       }
     };
 
@@ -129,175 +144,254 @@ const FloatingToolbar = ({ editor }) => {
   };
 
   return (
-    <>
-      <div
-        ref={toolbarRef}
-        className="floating-toolbar"
-        style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    <div
+      ref={toolbarRef}
+      className="floating-toolbar"
+      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    >
+      {/* Formatting Buttons */}
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleBold().run())}
+        className={editor.isActive('bold') ? 'is-active' : ''}
+        title="Bold"
       >
-        {/* Formatting Buttons */}
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleBold().run())}
-          className={editor.isActive('bold') ? 'is-active' : ''}
-          title="Bold"
-        >
-          <FontAwesomeIcon icon={faBold} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleItalic().run())}
-          className={editor.isActive('italic') ? 'is-active' : ''}
-          title="Italic"
-        >
-          <FontAwesomeIcon icon={faItalic} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleUnderline().run())}
-          className={editor.isActive('underline') ? 'is-active' : ''}
-          title="Underline"
-        >
-          <FontAwesomeIcon icon={faUnderline} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleStrike().run())}
-          className={editor.isActive('strike') ? 'is-active' : ''}
-          title="Strikethrough"
-        >
-          <FontAwesomeIcon icon={faStrikethrough} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleCode().run())}
-          className={editor.isActive('code') ? 'is-active' : ''}
-          title="Inline Code"
-        >
-          <FontAwesomeIcon icon={faCode} />
-        </button>
+        <FontAwesomeIcon icon={faBold} />
+      </button>
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleItalic().run())}
+        className={editor.isActive('italic') ? 'is-active' : ''}
+        title="Italic"
+      >
+        <FontAwesomeIcon icon={faItalic} />
+      </button>
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleUnderline().run())}
+        className={editor.isActive('underline') ? 'is-active' : ''}
+        title="Underline"
+      >
+        <FontAwesomeIcon icon={faUnderline} />
+      </button>
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleStrike().run())}
+        className={editor.isActive('strike') ? 'is-active' : ''}
+        title="Strikethrough"
+      >
+        <FontAwesomeIcon icon={faStrikethrough} />
+      </button>
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleCode().run())}
+        className={editor.isActive('code') ? 'is-active' : ''}
+        title="Inline Code"
+      >
+        <FontAwesomeIcon icon={faCode} />
+      </button>
 
-        {/* Color Picker */}
-        <div className="color-picker-container">
-          <button
-            onClick={() => setShowColorPicker(!showColorPicker)}
-            className={editor.isActive('textStyle', { color: true }) ? 'is-active' : ''}
-            title="Text Color"
-          >
-            <FontAwesomeIcon icon={faPalette} />
-          </button>
-          {showColorPicker && (
-            <div className="color-picker-popup">
-              {colorOptions.map(({ name, color }) => (
-                <button
-                  key={color}
-                  className="color-button"
-                  style={{ backgroundColor: color }}
-                  onClick={() => {
-                    applyStyle(() => editor.chain().focus().setColor(color).run());
-                    setShowColorPicker(false);
-                  }}
-                  title={name}
-                >
-                  {editor.isActive('textStyle', { color })
-                    ? <FontAwesomeIcon icon={faCheck} className="color-check-icon" />
-                    : null}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* H1 and H2 */}
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+        className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+        title="Heading 1"
+      >
+        <span className="heading-label">H1</span>
+      </button>
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+        className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+        title="Heading 2"
+      >
+        <span className="heading-label">H2</span>
+      </button>
 
-        {/* Heading Options */}
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
-          className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
-          title="Heading 1"
-        >
-          <span className="heading-level">H1</span>
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
-          className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
-          title="Heading 2"
-        >
-          <span className="heading-level">H2</span>
-        </button>
+      {/* Unordered List */}
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleBulletList().run())}
+        className={editor.isActive('bulletList') ? 'is-active' : ''}
+        title="Bullet List"
+      >
+        <FontAwesomeIcon icon={faListUl} />
+      </button>
 
-        {/* List Options */}
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleBulletList().run())}
-          className={editor.isActive('bulletList') ? 'is-active' : ''}
-          title="Bullet List"
-        >
-          <FontAwesomeIcon icon={faListUl} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleOrderedList().run())}
-          className={editor.isActive('orderedList') ? 'is-active' : ''}
-          title="Numbered List"
-        >
-          <FontAwesomeIcon icon={faListOl} />
-        </button>
-        <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleBlockquote().run())}
-          className={editor.isActive('blockquote') ? 'is-active' : ''}
-          title="Blockquote"
-        >
-          <FontAwesomeIcon icon={faQuoteRight} />
-        </button>
+      {/* Ordered List */}
+      <button
+        onClick={() => applyStyle(() => editor.chain().focus().toggleOrderedList().run())}
+        className={editor.isActive('orderedList') ? 'is-active' : ''}
+        title="Numbered List"
+      >
+        <FontAwesomeIcon icon={faListOl} />
+      </button>
 
-        {/* Alignment Options Consolidated into Dropdown */}
-        <div className="align-dropdown-container">
-          <button
-            onClick={() => setShowAlignDropdown(!showAlignDropdown)}
-            className={
-              editor.isActive({ textAlign: 'left' }) ||
-              editor.isActive({ textAlign: 'center' }) ||
-              editor.isActive({ textAlign: 'right' })
-                ? 'is-active'
-                : ''
-            }
-            title="Text Alignment"
-          >
-            <FontAwesomeIcon icon={faAlignLeft} />
-            <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
-          </button>
-          {showAlignDropdown && (
-            <div className="align-dropdown-popup">
-              <button
-                onClick={() => {
-                  applyStyle(() => editor.chain().focus().setTextAlign('left').run());
-                  setShowAlignDropdown(false);
-                }}
-                className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
-                title="Align Left"
-              >
-                <FontAwesomeIcon icon={faAlignLeft} />
-                <span>Left</span>
-              </button>
-              <button
-                onClick={() => {
-                  applyStyle(() => editor.chain().focus().setTextAlign('center').run());
-                  setShowAlignDropdown(false);
-                }}
-                className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
-                title="Align Center"
-              >
-                <FontAwesomeIcon icon={faAlignCenter} />
-                <span>Center</span>
-              </button>
-              <button
-                onClick={() => {
-                  applyStyle(() => editor.chain().focus().setTextAlign('right').run());
-                  setShowAlignDropdown(false);
-                }}
-                className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
-                title="Align Right"
-              >
-                <FontAwesomeIcon icon={faAlignRight} />
-                <span>Right</span>
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Paragraph Dropdown */}
+      <div className="paragraph-dropdown-container">
+        <button
+          onClick={() => setShowParagraphDropdown(!showParagraphDropdown)}
+          className={
+            editor.isActive('paragraph') ||
+            editor.isActive('codeBlock') ||
+            editor.isActive('blockquote')
+              ? 'is-active'
+              : ''
+          }
+          title="Paragraph Styles"
+        >
+          <FontAwesomeIcon icon={faParagraph} />
+          <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
+        </button>
+        {showParagraphDropdown && (
+          <div className="paragraph-dropdown-popup">
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setParagraph().run());
+                setShowParagraphDropdown(false);
+              }}
+              className={editor.isActive('paragraph') ? 'is-active' : ''}
+              title="Normal Paragraph"
+            >
+              <FontAwesomeIcon icon={faParagraph} />
+              <span>Normal</span>
+            </button>
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().toggleCodeBlock().run());
+                setShowParagraphDropdown(false);
+              }}
+              className={editor.isActive('codeBlock') ? 'is-active' : ''}
+              title="Code Block"
+            >
+              <FontAwesomeIcon icon={faCode} />
+              <span>Code Block</span>
+            </button>
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().toggleBlockquote().run());
+                setShowParagraphDropdown(false);
+              }}
+              className={editor.isActive('blockquote') ? 'is-active' : ''}
+              title="Blockquote"
+            >
+              <FontAwesomeIcon icon={faQuoteRight} />
+              <span>Blockquote</span>
+            </button>
+          </div>
+        )}
       </div>
-    </>
+
+      {/* Alignment Dropdown */}
+      <div className="align-dropdown-container">
+        <button
+          onClick={() => setShowAlignDropdown(!showAlignDropdown)}
+          className={
+            editor.isActive({ textAlign: 'left' }) ||
+            editor.isActive({ textAlign: 'center' }) ||
+            editor.isActive({ textAlign: 'right' })
+              ? 'is-active'
+              : ''
+          }
+          title="Text Alignment"
+        >
+          <FontAwesomeIcon icon={faAlignLeft} />
+          <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
+        </button>
+        {showAlignDropdown && (
+          <div className="align-dropdown-popup">
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setTextAlign('left').run());
+                setShowAlignDropdown(false);
+              }}
+              className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+              title="Align Left"
+            >
+              <FontAwesomeIcon icon={faAlignLeft} />
+              <span>Left</span>
+            </button>
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setTextAlign('center').run());
+                setShowAlignDropdown(false);
+              }}
+              className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+              title="Align Center"
+            >
+              <FontAwesomeIcon icon={faAlignCenter} />
+              <span>Center</span>
+            </button>
+            <button
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setTextAlign('right').run());
+                setShowAlignDropdown(false);
+              }}
+              className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+              title="Align Right"
+            >
+              <FontAwesomeIcon icon={faAlignRight} />
+              <span>Right</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Text Color Picker */}
+      <div className="color-picker-container">
+        <button
+          onClick={() => setShowColorPicker(!showColorPicker)}
+          className={editor.isActive('textStyle', { color: true }) ? 'is-active' : ''}
+          title="Text Color"
+        >
+          <FontAwesomeIcon icon={faPalette} />
+        </button>
+        {showColorPicker && (
+          <div className="color-picker-popup">
+            {textColorOptions.map(({ name, color }) => (
+              <button
+                key={color}
+                className="color-button"
+                style={{ backgroundColor: color }}
+                onClick={() => {
+                  applyStyle(() => editor.chain().focus().setColor(color).run());
+                  setShowColorPicker(false);
+                }}
+                title={name}
+              >
+                {editor.isActive('textStyle', { color })
+                  ? <FontAwesomeIcon icon={faCheck} className="color-check-icon" />
+                  : null}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Background Color Picker */}
+      <div className="bg-color-picker-container">
+        <button
+          onClick={() => setShowBgColorPicker(!showBgColorPicker)}
+          className={editor.isActive('highlight', { color: true }) ? 'is-active' : ''}
+          title="Background Color"
+        >
+          <FontAwesomeIcon icon={faHighlighter} />
+        </button>
+        {showBgColorPicker && (
+          <div className="bg-color-picker-popup">
+            {bgColorOptions.map(({ name, color }) => (
+              <button
+                key={color}
+                className="bg-color-button"
+                style={{ backgroundColor: color }}
+                onClick={() => {
+                  applyStyle(() => editor.chain().focus().setHighlight({ color }).run());
+                  setShowBgColorPicker(false);
+                }}
+                title={name}
+              >
+                {editor.isActive('highlight', { color })
+                  ? <FontAwesomeIcon icon={faCheck} className="bg-color-check-icon" />
+                  : null}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -136,7 +136,9 @@ const NotesPage = () => {
         },
       }),
       Gapcursor,
-      Highlight,
+      Highlight.configure({
+        multicolor: true, // Allows multiple highlight colors
+      }),
       Color,
       TextStyle,
       Bold,
