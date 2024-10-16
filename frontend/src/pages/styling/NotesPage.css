@@ -15,6 +15,7 @@ body {
     padding: 0;
     color: #4D4D4D; /* Primary text color */
     background-color: #FFFFFF; /* White background for a clean look */
+    overflow-x: hidden; /* Prevent horizontal scrolling on body */
 }
 
 /* Utility Classes */
@@ -33,7 +34,7 @@ body {
     left: 0;
     right: 0;
     background-color: #f1fcff;
-    padding: 17px 20px;
+    padding: 15px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between; /* Space between title and profile */
@@ -57,9 +58,9 @@ body {
     left: 50%;
     transform: translateX(-50%);
     display: none; /* Hidden by default */
-    gap: 20px;
+    gap: 15px;
+    align-items: center;
 }
-
 
 .app-header.note-open .header-buttons {
     display: flex; /* Show when a note is open */
@@ -70,11 +71,17 @@ body {
     background-color: #FFFFFF;
     color: #2193b0;
     border: 1px solid #2193b0;
-    padding: 8px 12px;
+    padding: 8px 14px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.2s ease, color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; /* Remove underline from labels */
+    white-space: nowrap; /* Prevent text from wrapping */
+    box-sizing: border-box;
 }
 
 .header-button:hover {
@@ -94,45 +101,6 @@ body {
     color: #ffffff;
 }
 
-.header-buttons .header-button {
-    display: inline-flex; /* Ensure the label behaves like a button */
-    align-items: center; /* Vertically center content within the button */
-    justify-content: center; /* Horizontally center content within the button */
-    background-color: #FFFFFF;
-    color: #2193b0;
-    border: 1px solid #2193b0;
-    padding: 8px 16px; /* Increased horizontal padding for better click area */
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    text-decoration: none; /* Remove underline from labels */
-    white-space: nowrap; /* Prevent text from wrapping */
-}
-
-/* AI Notes Button Specific Styling */
-.header-buttons .ai-notes-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #ffffff;
-    color: #4D4D4D;
-    border: 1px solid #4D4D4D;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    white-space: nowrap;
-}
-
-/* Header Buttons Hover Effect */
-.header-buttons .header-button:hover,
-.header-buttons .ai-notes-button:hover {
-    background-color: #2193b0;
-    color: #FFFFFF;
-}
-
 /* Adjust Upload Image Container */
 .upload-image-container {
     display: flex;
@@ -145,25 +113,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-}
-
-
-.header-buttons .header-button,
-.header-buttons .ai-notes-button {
-    margin: 0; /* Remove default margins */
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-}
-
-/* Reduce Padding if Necessary */
-.header-buttons .header-button,
-.header-buttons .ai-notes-button {
-    padding: 8px 14px; /* Adjust padding to better fit the text and reduce hover offset */
-}
-
-/* Ensure Labels are Block-Level for Consistent Hover Areas */
-.header-buttons label.header-button {
-    display: inline-flex;
-    width: auto; /* Allow buttons to size based on content */
+    margin: 0;
+    padding: 8px 14px;
+    box-sizing: border-box;
 }
 
 /* Profile Section */
@@ -175,7 +127,6 @@ body {
     flex: 0 0 auto; /* Prevent profile section from stretching */
     margin-left: auto; /* Push profile section to the far right */
 }
-
 
 .profile-icon {
     width: 40px;
@@ -236,9 +187,9 @@ body {
 
 /* Sidebar Toggle Button (Hamburger Icon) */
 .sidebar-toggle-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: fixed;
+    top: 15px;
+    left: 15px;
     background-color: #ffffff;
     border: none;
     border-radius: 50%;
@@ -250,7 +201,7 @@ body {
     display: none; /* Hidden by default, shown on smaller screens */
     align-items: center;
     justify-content: center;
-    z-index: 2000; /* Above the sidebar */
+    z-index: 1600; /* Above the header */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -266,13 +217,7 @@ body {
     position: relative;
     background-color: #FFFFFF;
     padding-top: 80px; /* Height of the header */
-}
-
-/* Profile Dropdown Positioning on Mobile */
-@media (max-width: 768px) {
-    .profile-dropdown {
-        right: 10px;
-    }
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* No Note Selected */
@@ -282,14 +227,14 @@ body {
     justify-content: center; /* Center vertically */
     align-items: center;     /* Center horizontally */
     width: 100%;
-    height: 100vh; /* Take up the full viewport height */
+    height: calc(100vh - 80px); /* Adjust height to account for header */
     box-sizing: border-box;
+    padding: 20px;
 }
 
 .no-note-selected {
     text-align: center;
     color: #555555;
-    margin-bottom: 200px;
 }
 
 .no-note-selected p {
@@ -304,11 +249,14 @@ body {
     align-items: center; /* Center the editor horizontally */
     background-color: #FFFFFF; /* White background */
     padding: 20px;
+    overflow-y: auto; /* Enable vertical scrolling if content exceeds viewport */
 }
 
 /* Editor Content Area */
 .editor-content {
-    height: 100%;
+    width: 100%;
+    max-width: 800px; /* Limit editor width on larger screens */
+    flex-grow: 1;
     outline: none;
     font-size: 16px;
     line-height: 1.6;
@@ -316,10 +264,13 @@ body {
     white-space: pre-wrap;
     word-wrap: break-word;
     position: relative; /* For placeholder positioning */
+    overflow-y: auto;
 }
 
 /* Toolbar Styling */
 .toolbar {
+    width: 100%;
+    max-width: 800px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -328,6 +279,7 @@ body {
     border-radius: 8px;
     flex-wrap: wrap;
     margin-bottom: 10px;
+    box-sizing: border-box;
 }
 
 .toolbar button,
@@ -340,6 +292,7 @@ body {
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+    flex: 0 0 auto;
 }
 
 .toolbar button:hover,
@@ -387,39 +340,27 @@ body {
     color: #FFFFFF;
 }
 
-/* Editor Buttons (Save and Cancel) */
+/* Editor Buttons (Close Note) */
 .editor-buttons {
+    width: 100%;
+    max-width: 800px;
     display: flex;
-    gap: 10px;
+    justify-content: flex-end;
     margin-top: 15px;
 }
 
-.save-button,
-.cancel-button {
+.close-button {
     padding: 10px 20px;
     border: none;
     border-radius: 30px;
     cursor: pointer;
     font-weight: 600;
+    background-color: #f8f9fa;
+    color: #333333;
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.save-button {
-    background-color: #2193b0;
-    color: #ffffff;
-}
-
-.save-button:hover {
-    background-color: #1a78a0;
-    transform: translateY(-2px);
-}
-
-.cancel-button {
-    background-color: #f8f9fa;
-    color: #333333;
-}
-
-.cancel-button:hover {
+.close-button:hover {
     background-color: #e9ecef;
     transform: translateY(-2px);
 }
@@ -481,6 +422,8 @@ body {
     border-radius: 8px;
     font-size: 16px;
     transition: border-color 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .folder-name-input:focus {
@@ -507,19 +450,6 @@ body {
     line-height: 1.6;
 }
 
-/* Placeholder for Title Input */
-.title-input.is-empty::before {
-    content: attr(data-placeholder);
-    color: #aaa;
-    position: absolute;
-    pointer-events: none;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 24px;
-    line-height: 1.2;
-}
-
 /* Responsive Design */
 
 /* Mobile Styles */
@@ -527,17 +457,19 @@ body {
     /* Show Hamburger Icon */
     .sidebar-toggle-button {
         display: flex; /* Show hamburger button */
-        position: fixed;
-        top: 15px;
-        left: 15px;
     }
 
     /* Adjust Header Layout for Mobile */
     .app-header {
-        justify-content: space-between;
         padding: 10px 15px;
     }
 
+    .app-header h1 {
+        font-size: 22px;
+        margin-left: 50px; /* Space for hamburger icon */
+    }
+
+    /* Adjust Header Buttons for Mobile */
     .header-buttons {
         position: absolute;
         top: 60px; /* Below the header */
@@ -549,108 +481,114 @@ body {
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         gap: 10px;
-        display: none; /* Hidden by default */
+        width: 90%;
         z-index: 2000;
-        width: 80%;
-    }
-
-    .app-header.note-open .header-buttons {
-        display: flex;
-    }
-
-    /* Prevent overlapping of title and hamburger */
-    .app-header h1 {
-        font-size: 20px;
-    }
-
-    /* Header Buttons Styling for Mobile */
-    .header-buttons .header-button {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-
-    /* Tighten the layout */
-    .notes-container {
-        padding-top: 60px; /* Adjusted for smaller header */
-    }
-
-    /* Make the app not scroll horizontally */
-    .notes-container,
-    .note-content,
-    .note-view-section {
-        overflow-x: hidden;
-    }
-}
-
-/* Tablet Styles */
-@media (min-width: 769px) and (max-width: 1024px) {
-    /* Adjust Header Layout for Tablet */
-    .app-header {
-        justify-content: space-between;
-        padding: 15px 20px;
-    }
-
-    .header-buttons {
         display: none;
     }
 
     .app-header.note-open .header-buttons {
         display: flex;
-        gap: 20px;
     }
 
-    /* Adjust header title size */
+    .header-button,
+    .ai-notes-button {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Adjust Profile Section */
+    .profile-section {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+
+    /* Adjust Notes Container */
+    .notes-container {
+        padding-top: 70px; /* Adjusted for smaller header */
+    }
+
+    /* Adjust Editor Content Area */
+    .editor-content {
+        width: 100%;
+        max-width: none;
+    }
+
+    /* Adjust Toolbar */
+    .toolbar {
+        width: 100%;
+        max-width: none;
+        padding: 10px 5px;
+    }
+
+    .toolbar button,
+    .toolbar select {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    /* Adjust Close Button */
+    .editor-buttons {
+        width: 100%;
+        max-width: none;
+        padding: 0 10px;
+    }
+
+    .close-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Tablet Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
     .app-header h1 {
         font-size: 24px;
     }
 
-    /* Header Buttons Styling for Tablet */
-    .header-buttons .header-button {
+    .header-buttons {
+        gap: 15px;
+    }
+
+    .header-button,
+    .ai-notes-button {
         padding: 8px 12px;
         font-size: 14px;
     }
 
-    /* Ensure hamburger is positioned correctly */
-    .sidebar-toggle-button {
-        position: fixed;
-        top: 15px;
-        left: 15px;
+    .toolbar button,
+    .toolbar select {
+        font-size: 13px;
+        padding: 7px 10px;
     }
 
-    /* Tighten the layout */
-    .notes-container {
-        padding-top: 60px; /* Adjusted for header */
+    .editor-content {
+        max-width: 700px;
     }
 
-    /* Prevent horizontal scrolling */
-    .notes-container,
-    .note-content,
-    .note-view-section {
-        overflow-x: hidden;
+    .toolbar,
+    .editor-buttons {
+        max-width: 700px;
     }
 }
 
 /* Additional Tightening on Small Devices */
 @media (max-width: 600px) {
-    /* Ensure header-buttons fit on small screens */
-    .header-buttons {
-        width: 90%;
-    }
-
-    .header-button {
-        padding: 8px 10px;
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 480px) {
     .app-header h1 {
-        font-size: 18px;
+        font-size: 20px;
+        margin-left: 50px;
     }
 
-    .header-buttons .header-button {
+    .header-button,
+    .ai-notes-button {
         font-size: 12px;
         padding: 6px 10px;
+    }
+
+    .toolbar button,
+    .toolbar select {
+        font-size: 11px;
+        padding: 5px 8px;
     }
 }
 
@@ -691,8 +629,7 @@ body {
     background-color: #ff9800;
 }
 
-/* NotesPage.css */
-
+/* Loading Indicators */
 .notes-loading-indicator,
 .folders-loading-indicator {
     display: flex;
@@ -704,6 +641,7 @@ body {
     color: #555;
 }
 
+/* Load More Button */
 .load-more-button {
     padding: 10px 20px;
     margin: 20px auto;
@@ -720,11 +658,13 @@ body {
     background-color: #0056b3;
 }
 
+/* Disabled Save Button */
 .save-button:disabled {
     background-color: #6c757d;
     cursor: not-allowed;
 }
 
+/* Cancel Button */
 .cancel-button {
     padding: 10px 20px;
     margin-left: 10px;
@@ -739,5 +679,3 @@ body {
 .cancel-button:hover {
     background-color: #c82333;
 }
-
-
