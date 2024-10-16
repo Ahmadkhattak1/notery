@@ -35,9 +35,7 @@ import ResizableImage from '../extensions/ResizableImage';
 import './styling/NotesPage.css';
 import NoteEditor from '../components/NoteEditor.js';
 import Sidebar from '../components/Sidebar.js';
-import FloatingToolbar from '../components/FloatingToolbar.js'; // Import the FloatingToolbar component
-
-
+import FloatingToolbar from '../components/FloatingToolbar.js';
 import CustomHeading from '../extensions/CustomHeading';
 import CustomParagraph from '../extensions/CustomParagraph';
 import ListItem from '@tiptap/extension-list-item';
@@ -51,14 +49,9 @@ import TextStyle from '@tiptap/extension-text-style';
 import { getAuth, signOut } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { useNavigate } from 'react-router-dom';
-
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-// Import the image compression library
 import imageCompression from 'browser-image-compression';
-
-// Import a loading spinner library or use CSS-based spinner
-import { ClipLoader } from 'react-spinners'; // Ensure you have react-spinners installed
+import { ClipLoader } from 'react-spinners';
 
 Modal.setAppElement('#root'); // Important for accessibility
 
@@ -66,7 +59,7 @@ const NotesPage = () => {
   const [textColor, setTextColor] = useState('');
   const { user } = useAuth();
   const [folders, setFolders] = useState([]);
-  const [selectedFolder, setSelectedFolder] = useState(''); // Holds the ID of the selected folder
+  const [selectedFolder, setSelectedFolder] = useState('');
   const [folderName, setFolderName] = useState('');
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
@@ -84,24 +77,7 @@ const NotesPage = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const colorOptions = [
-    { name: 'Color', color: '' },
-    { name: 'Black', color: '#000000' },
-    { name: 'Dark Gray', color: '#4D4D4D' },
-    { name: 'Gray', color: '#9B9A97' },
-    { name: 'Light Gray', color: '#B3B3B3' },
-    { name: 'Red', color: '#E03E3E' },
-    { name: 'Orange', color: '#D9730D' },
-    { name: 'Yellow', color: '#DFAB01' },
-    { name: 'Green', color: '#0F7B6C' },
-    { name: 'Blue', color: '#0B6E99' },
-    { name: 'Purple', color: '#6940A5' },
-    { name: 'Pink', color: '#AD1A72' },
-    { name: 'Brown', color: '#64473A' },
-  ];
-
   const [activeNote, setActiveNote] = useState(null);
-
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState([]);
 
@@ -110,14 +86,13 @@ const NotesPage = () => {
   const storage = getStorage();
 
   const [isSaved, setIsSaved] = useState(true);
-
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // States for per-folder pagination and loading
-  const [notesData, setNotesData] = useState({}); // { [folderId]: [notes] }
-  const [perFolderLoadingNotes, setPerFolderLoadingNotes] = useState({}); // { [folderId]: boolean }
-  const [perFolderHasMoreNotes, setPerFolderHasMoreNotes] = useState({}); // { [folderId]: boolean }
-  const [lastVisibleNote, setLastVisibleNote] = useState({}); // { [folderId]: lastVisibleDoc }
+  const [notesData, setNotesData] = useState({});
+  const [perFolderLoadingNotes, setPerFolderLoadingNotes] = useState({});
+  const [perFolderHasMoreNotes, setPerFolderHasMoreNotes] = useState({});
+  const [lastVisibleNote, setLastVisibleNote] = useState({});
 
   // New loading states
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -134,13 +109,9 @@ const NotesPage = () => {
         heading: {
           levels: [1, 2],
         },
+        codeBlock: false, // Disable default code block
       }),
       Gapcursor,
-      Highlight.configure({
-        multicolor: true, // Allows multiple highlight colors
-      }),
-      Color,
-      TextStyle,
       Bold,
       Italic,
       Underline,
@@ -155,7 +126,12 @@ const NotesPage = () => {
       }),
       ResizableImage,
       TextAlign.configure({
-        types: ['heading', 'paragraph'],
+        types: ['heading', 'paragraph', 'codeBlock', 'blockquote'],
+      }),
+      Color,
+      TextStyle,
+      Highlight.configure({
+        multicolor: true,
       }),
       Blockquote,
       HorizontalRule,
@@ -211,7 +187,6 @@ const NotesPage = () => {
         }
         return false;
       },
-
       handlePaste: (view, event) => {
         const { state } = view;
         const { selection } = state;
@@ -265,7 +240,7 @@ const NotesPage = () => {
           setIsSaved(false);
           setHasUnsavedChanges(true);
         }
-      }, 1000); // 1-second delay
+      }, 5000); // 5-second delay
 
       editor.on('update', handleAutoSave);
 
@@ -278,7 +253,7 @@ const NotesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, activeNote]);
 
-  // Save note function without automatic deletion
+  // Save note function
   const handleSaveNote = async () => {
     if (!editor) {
       console.warn('Editor instance is not available.');
@@ -317,7 +292,6 @@ const NotesPage = () => {
 
     const isContentEmpty = tempDiv.textContent.trim() === '';
 
-    // Remove automatic deletion of empty notes
     if (isContentEmpty) {
       // Optionally, prompt the user or handle it elsewhere
       return;
@@ -531,13 +505,8 @@ const NotesPage = () => {
         setFolders(foldersData);
         console.log('Folders fetched:', foldersData.length);
 
-        // No longer fetch notes for all folders on load
-        // Notes will be fetched when a folder is expanded
-
         // Ensure 'Unassigned' folder is always present
         if (!foldersData.some((folder) => folder.id === 'unassigned')) {
-          // Optionally, create 'Unassigned' folder if it doesn't exist
-          // For now, we'll assume it's handled elsewhere
           console.warn("'Unassigned' folder is missing.");
         }
       },
@@ -556,7 +525,7 @@ const NotesPage = () => {
 
   // Fetch notes when selectedFolder changes
   useEffect(() => {
-    if (!selectedFolder) return; // Do nothing if no folder is selected
+    if (!selectedFolder) return;
 
     // If notes for the selected folder are already fetched, do not fetch again
     if (notesData[selectedFolder]) {
@@ -577,7 +546,7 @@ const NotesPage = () => {
             where('userId', '==', user.uid),
             where('folderId', '==', selectedFolder),
             orderBy('createdAt', 'desc'),
-            limit(initialLimit) // Load ten notes initially
+            limit(initialLimit)
           );
         } else {
           // For 'Unassigned' folder
@@ -586,7 +555,7 @@ const NotesPage = () => {
             where('userId', '==', user.uid),
             where('folderId', '==', null),
             orderBy('createdAt', 'desc'),
-            limit(initialLimit) // Load ten notes initially
+            limit(initialLimit)
           );
         }
 
@@ -598,7 +567,6 @@ const NotesPage = () => {
           userId: doc.data().userId,
           createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date(),
           updatedAt: doc.data().updatedAt ? doc.data().updatedAt.toDate() : null,
-          // Exclude 'content' field
         }));
 
         setNotesData((prevNotes) => ({
@@ -646,7 +614,7 @@ const NotesPage = () => {
           where('folderId', '==', folderId),
           orderBy('createdAt', 'desc'),
           startAfter(lastVisibleNote[folderId]),
-          limit(loadMoreLimit) // Load ten more notes
+          limit(loadMoreLimit)
         );
       } else {
         // For 'Unassigned' folder
@@ -656,7 +624,7 @@ const NotesPage = () => {
           where('folderId', '==', null),
           orderBy('createdAt', 'desc'),
           startAfter(lastVisibleNote[folderId]),
-          limit(loadMoreLimit) // Load ten more notes
+          limit(loadMoreLimit)
         );
       }
 
@@ -668,7 +636,6 @@ const NotesPage = () => {
         userId: doc.data().userId,
         createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date(),
         updatedAt: doc.data().updatedAt ? doc.data().updatedAt.toDate() : null,
-        // Exclude 'content' field
       }));
 
       setNotesData((prevNotes) => ({
@@ -700,7 +667,7 @@ const NotesPage = () => {
   const handleAddNoteAction = async (folderId) => {
     if (!editor) return;
 
-    setIsCreatingNote(true); // Start creating note
+    setIsCreatingNote(true);
 
     try {
       const docRef = await addDoc(collection(db, 'notes'), {
@@ -737,7 +704,7 @@ const NotesPage = () => {
       console.error('Error adding note:', error);
       alert('Failed to add the note. Please try again.');
     } finally {
-      setIsCreatingNote(false); // Stop creating note
+      setIsCreatingNote(false);
     }
   };
 
@@ -762,7 +729,7 @@ const NotesPage = () => {
       return;
     }
 
-    setIsCreatingFolder(true); // Start creating folder
+    setIsCreatingFolder(true);
 
     try {
       const docRef = await addDoc(collection(db, 'folders'), {
@@ -777,7 +744,7 @@ const NotesPage = () => {
       console.error('Error adding folder:', error.message, error.code, error);
       alert('Failed to add the folder. Please try again.');
     } finally {
-      setIsCreatingFolder(false); // Stop creating folder
+      setIsCreatingFolder(false);
     }
   };
 
@@ -830,11 +797,6 @@ const NotesPage = () => {
       setNotesData((prevNotes) => {
         const updatedNotes = { ...prevNotes };
         delete updatedNotes[folderId];
-        // Ensure 'unassigned' folder is fetched if needed
-        if (!updatedNotes['unassigned']) {
-          // Optional: Fetch 'unassigned' notes if necessary
-          console.warn("'Unassigned' folder is missing in notesData.");
-        }
         return updatedNotes;
       });
 
@@ -918,7 +880,7 @@ const NotesPage = () => {
     }
   };
 
-  // Handle image uploads (unchanged)
+  // Handle image uploads
   const handleImageUpload = async (event) => {
     if (!isOnline) {
       alert('Image upload requires an internet connection.');
@@ -993,6 +955,12 @@ const NotesPage = () => {
     }
   };
 
+  // Handle AI Notes click
+  const handleAINotesClick = () => {
+    // Implement AI Notes functionality here
+    alert('AI Notes feature is not yet implemented.');
+  };
+
   // Handle logout
   const handleLogout = () => {
     signOut(auth)
@@ -1005,7 +973,7 @@ const NotesPage = () => {
       });
   };
 
-  // Handle online/offline status (unchanged)
+  // Handle online/offline status
   useEffect(() => {
     const handleOnline = async () => {
       setIsOnline(true);
@@ -1038,7 +1006,7 @@ const NotesPage = () => {
     };
   }, [offlineQueue]);
 
-  // Handle clicking outside (unchanged)
+  // Handle clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -1093,8 +1061,82 @@ const NotesPage = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="notes-container">
-        <Header />
+    <div className="notes-container">
+    <header className={`app-header ${activeNote ? 'note-open' : ''}`}>
+  <h1>Notery</h1>
+
+  {/* Header Buttons - Visible Only When a Note is Open */}
+  <div className="header-buttons">
+    {/* Upload Image and AI Notes Buttons */}
+    <div className="upload-image-container">
+      <label htmlFor="imageUploadHeader" className="header-button">
+        📷 Upload Image
+      </label>
+      <input
+        type="file"
+        id="imageUploadHeader"
+        accept="image/*"
+        onChange={handleImageUpload}
+        style={{ display: 'none' }}
+      />
+      <label htmlFor="cameraCaptureHeader" className="header-button">
+        📷 Take Photo
+      </label>
+      <input
+        type="file"
+        id="cameraCaptureHeader"
+        accept="image/*"
+        capture="environment"
+        onChange={handleCameraCapture}
+        style={{ display: 'none' }}
+      />
+    </div>
+    <button
+      className="header-button ai-notes-button"
+      onClick={handleAINotesClick}
+      title="AI Notes"
+    >
+      📝 AI Notes
+    </button>
+  </div>
+
+  {/* Profile Section */}
+  <div className="profile-section">
+    <div
+      className="profile-icon"
+      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+    >
+      {user && user.photoURL ? (
+        <img src={user.photoURL} alt="Profile" className="profile-picture" />
+      ) : (
+        <div className="profile-placeholder">P</div>
+      )}
+    </div>
+    {isProfileDropdownOpen && (
+      <div className="profile-dropdown">
+        <ul>
+          <li
+            onClick={() => {
+              setIsProfileDropdownOpen(false);
+              navigate('/profile');
+            }}
+          >
+            Profile Settings
+          </li>
+          <li
+            onClick={() => {
+              setIsProfileDropdownOpen(false);
+              handleLogout();
+            }}
+          >
+            Logout
+          </li>
+        </ul>
+      </div>
+    )}
+  </div>
+</header>
+
 
         {/* Offline Alert */}
         {!isOnline && (
@@ -1119,57 +1161,20 @@ const NotesPage = () => {
           ☰
         </button>
 
-        {/* Profile Section */}
-        <div className="profile-section">
-          <div
-            className="profile-icon"
-            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-          >
-            {user && user.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="profile-picture" />
-            ) : (
-              <div className="profile-placeholder">P</div>
-            )}
-          </div>
-          {isProfileDropdownOpen && (
-            <div className="profile-dropdown">
-              <ul>
-                <li
-                  onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    navigate('/profile');
-                  }}
-                >
-                  Profile Settings
-                </li>
-                <li
-                  onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    handleLogout();
-                  }}
-                >
-                  Logout
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
-
         {/* Sidebar Component */}
         <Sidebar
           ref={sidebarRef}
           folders={folders}
           handleEditFolder={handleEditFolder}
           handleDeleteFolder={handleDeleteFolder}
-          handleAddNote={handleAddNoteAction} // Updated to handleAddNoteAction
+          handleAddNote={handleAddNoteAction}
           openAddFolderModal={openAddFolderModal}
           openNote={openNote}
-          notes={notesData} // Object: { [folderId]: [notes] }
+          notes={notesData}
           activeNote={activeNote}
           selectedFolder={selectedFolder}
           setSelectedFolder={(folderId) => {
             setSelectedFolder(folderId);
-            // Notes are fetched via useEffect when selectedFolder changes
           }}
           isFolderDropdownOpen={isFolderDropdownOpen}
           setIsFolderDropdownOpen={setIsFolderDropdownOpen}
@@ -1182,10 +1187,10 @@ const NotesPage = () => {
           isNoteDropdownOpen={isNoteDropdownOpen}
           setIsNoteDropdownOpen={setIsNoteDropdownOpen}
           handleDeleteNote={handleDeleteNote}
-          isCreatingNote={isCreatingNote} // Pass loading state
-          perFolderLoadingNotes={perFolderLoadingNotes} // Pass per-folder loading state
-          perFolderHasMoreNotes={perFolderHasMoreNotes} // Pass per-folder hasMore state
-          loadMoreNotes={loadMoreNotes} // Pass loadMoreNotes function
+          isCreatingNote={isCreatingNote}
+          perFolderLoadingNotes={perFolderLoadingNotes}
+          perFolderHasMoreNotes={perFolderHasMoreNotes}
+          loadMoreNotes={loadMoreNotes}
         />
 
         {/* Modal for Adding/Editing Folders */}
@@ -1193,10 +1198,10 @@ const NotesPage = () => {
           isOpen={isFolderModalOpen}
           onRequestClose={() => setIsFolderModalOpen(false)}
           contentLabel={editingFolder ? 'Edit Folder' : 'Add Folder'}
-          className="modal-content" // Matches .modal-content in CSS
-          overlayClassName="ReactModal__Overlay" // Matches .ReactModal__Overlay in CSS
+          className="modal-content"
+          overlayClassName="ReactModal__Overlay"
         >
-          <div className="folder-modal-content"> {/* Matches .folder-modal-content in CSS */}
+          <div className="folder-modal-content">
             <h2>{editingFolder ? 'Edit Folder' : 'Add Folder'}</h2>
             <form
               onSubmit={(e) => {
@@ -1216,11 +1221,11 @@ const NotesPage = () => {
                 }
                 placeholder="Folder Name"
                 required
-                className="folder-name-input" // Matches .folder-name-input in CSS
+                className="folder-name-input"
                 ref={titleInputRef}
-                autoFocus // Automatically focus on input when modal opens
+                autoFocus
               />
-              <div className="modal-buttons"> {/* Matches .modal-buttons in CSS */}
+              <div className="modal-buttons">
                 <button type="submit" className="save-button" disabled={isCreatingFolder}>
                   {isCreatingFolder ? 'Saving...' : 'Save'}
                 </button>
@@ -1239,34 +1244,25 @@ const NotesPage = () => {
               activeNote={activeNote}
               editor={editor}
               textColor={textColor}
-              colorOptions={colorOptions}
               handleImageUpload={handleImageUpload}
               handleCameraCapture={handleCameraCapture}
               closeNote={closeNote}
             />
             {/* Include the FloatingToolbar component and pass the editor instance */}
             {editor && <FloatingToolbar editor={editor} />}
-          </>        ) : (
-        <div class="note-view-section">
-        <div class="no-note-wrapper">
-          <div class="no-note-selected">
-            <p>Please select or create a note to start editing.</p>
+          </>
+        ) : (
+          <div className="note-view-section">
+            <div className="no-note-wrapper">
+              <div className="no-note-selected">
+                <p>Please select or create a note to start editing.</p>
+              </div>
+            </div>
           </div>
-        </div>
-        </div>
         )}
-
-        {/* Remove global loading indicators and "Load More" button from NotesPage.js */}
       </div>
     </DragDropContext>
   );
 };
 
 export default NotesPage;
-
-// Helper Header Component
-const Header = () => (
-  <header className="app-header">
-    <h1>Notery</h1>
-  </header>
-);

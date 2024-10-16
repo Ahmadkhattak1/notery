@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { EditorContent } from '@tiptap/react';
-import Toolbar from './Toolbar'; // Import the Toolbar component
 import './styling/NoteEditor.css'; // Corrected CSS import path
 
 const NoteEditor = ({
@@ -26,15 +25,6 @@ const NoteEditor = ({
   return (
     <div className="note-view-section">
       <div className="note-content-container">
-        {/* Toolbar Section */}
-        <div className="toolbar-section">
-          <Toolbar
-            editor={editor}
-            handleImageUpload={handleImageUpload}
-            handleCameraCapture={handleCameraCapture}
-          />
-        </div>
-
         {/* Note Content */}
         <div className="note-content">
           <div

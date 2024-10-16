@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import './styling/Toolbar.css'; // Ensure you create appropriate styles
 
-const Toolbar = ({ handleImageUpload, handleCameraCapture }) => {
+const Toolbar = ({ handleImageUpload, handleCameraCapture, handleAINotesClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -62,6 +62,15 @@ const Toolbar = ({ handleImageUpload, handleCameraCapture }) => {
           </div>
         )}
       </div>
+
+      {/* Adding AI Notes Button */}
+      <button
+        className="ai-notes-button"
+        onClick={handleAINotesClick}
+        title="AI Notes"
+      >
+        📝 AI Notes
+      </button>
     </div>
   );
 };
