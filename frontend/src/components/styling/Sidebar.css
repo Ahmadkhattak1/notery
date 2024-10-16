@@ -4,19 +4,20 @@
 
 /* Collections Sidebar */
 .collections-sidebar {
-    width: 250px;
+    position: fixed; /* Make the sidebar sticky */
+    top: 80px; /* Adjust to match the header height */
+    left: 0;
+    bottom: 0;
+    width: 250px; /* Adjust as needed */
     background-color: #f5f7fa; /* Light neutral background */
-    border-radius: 10px;
+    border-right: 1px solid #ddd; /* Optional border */
     padding: 20px;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease-in-out, width 0.3s ease;
-    overflow-y: auto;
+    overflow-y: auto; /* Allow scrolling within the sidebar */
     overflow-x: hidden;
-    max-height: 90vh;
     box-sizing: border-box;
-    z-index: 1000;
-    position: relative;
+    z-index: 1000; /* Ensure it stays above main content */
     scrollbar-width: thin; /* For Firefox */
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
@@ -42,9 +43,7 @@
 }
 
 /* Gradient Overlay to Indicate More Content */
-.collections-sidebar::after {
-    /* Existing styles... */
-}
+/* (If needed, you can add gradient overlays here) */
 
 /* Sidebar Header */
 .sidebar-header {
@@ -440,6 +439,12 @@
 @media (min-width: 769px) and (max-width: 1024px) {
     .collections-sidebar {
         width: 250px;
+        position: fixed;
+        top: 80px; /* Adjust to match the header height */
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        z-index: 1000;
     }
 
     .sidebar-header h2 {
@@ -467,6 +472,16 @@
 
 /* Desktop Styles */
 @media (min-width: 1025px) {
+    .collections-sidebar {
+        position: fixed;
+        top: 80px; /* Adjust to match the header height */
+        left: 0;
+        bottom: 0;
+        width: 250px; /* Adjust as needed */
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
     .toggle-sidebar-button {
         display: none;
     }

@@ -14,8 +14,10 @@ const NoteEditor = ({
   if (!activeNote) {
     return (
       <div className="note-view-section">
-        <div className="no-note-selected">
-          <p>Select a note to view and edit its content.</p>
+        <div className="note-content-container">
+          <div className="no-note-selected">
+            <p>Select a note to view and edit its content.</p>
+          </div>
         </div>
       </div>
     );
@@ -23,22 +25,24 @@ const NoteEditor = ({
 
   return (
     <div className="note-view-section">
-      {/* Toolbar Section */}
-      <div className="toolbar-section">
-        <Toolbar
-          editor={editor}
-          handleImageUpload={handleImageUpload}
-          handleCameraCapture={handleCameraCapture}
-        />
-      </div>
+      <div className="note-content-container">
+        {/* Toolbar Section */}
+        <div className="toolbar-section">
+          <Toolbar
+            editor={editor}
+            handleImageUpload={handleImageUpload}
+            handleCameraCapture={handleCameraCapture}
+          />
+        </div>
 
-      {/* Note Content */}
-      <div className="note-content">
-        <div
-          className="editor-container"
-          onClick={() => editor && editor.commands.focus()}
-        >
-          <EditorContent editor={editor} className="editor-content" />
+        {/* Note Content */}
+        <div className="note-content">
+          <div
+            className="editor-container"
+            onClick={() => editor && editor.commands.focus()}
+          >
+            <EditorContent editor={editor} className="editor-content" />
+          </div>
         </div>
       </div>
     </div>

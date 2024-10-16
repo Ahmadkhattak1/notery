@@ -1240,9 +1240,13 @@ const NotesPage = () => {
             closeNote={closeNote} // Pass closeNote function
           />
         ) : (
-          <div className="no-active-note">
+        <div class="note-view-section">
+        <div class="no-note-wrapper">
+          <div class="no-note-selected">
             <p>Please select or create a note to start editing.</p>
           </div>
+        </div>
+        </div>
         )}
 
         {/* Remove global loading indicators and "Load More" button from NotesPage.js */}
@@ -1256,6 +1260,6 @@ export default NotesPage;
 // Helper Header Component
 const Header = () => (
   <header className="app-header">
-    <h1>My Notes</h1>
+    <h1>Notery</h1>
   </header>
 );

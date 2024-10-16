@@ -8,21 +8,35 @@
   justify-content: flex-start;
   padding: 24px;
   box-sizing: border-box;
-  background-color: #f9fafb;
-  min-width: 1280px; /* Minimum width for larger screens */
-  width: 50%; /* Ensures responsiveness on smaller screens */
+  background-color: #f0f4f8; /* Subtle grey background */
+  width: calc(100% - 250px); /* Adjust width to account for sidebar */
+  margin-left: 250px; /* Push content to the right of the sidebar */
+  overflow-x: hidden; /* Prevents unnecessary horizontal scroll */
+}
+
+/* Note Content Container */
+.note-content-container {
+  width: 100%;
+  max-width: 1200px; /* Adjust as needed for larger screens */
+  background-color: #f0f4f8; /* Match the section's background */
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible; /* Ensure no separate scrolling */
 }
 
 /* Note Content */
 .note-content {
   width: 100%;
   max-width: 1000px;
-  background-color: #ffffff;
+  background-color: #ffffff; /* White background for the editor */
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 24px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: hidden; /* Remove scrolling inside the note content */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin: 0 auto; /* Center the note content */
   flex-shrink: 0;  /* Prevent the container from shrinking */
@@ -69,7 +83,9 @@
   padding: 16px;
   box-sizing: border-box;
   background-color: #ffffff;
-  /* Removed flex, overflow, and max-height to allow content to dictate size */
+  width: 100%; /* Make sure the editor takes full width */
+  max-width: 1000px; /* Ensure the editor does not exceed this width */
+  overflow: visible; /* No scrolling inside the editor */
 }
 
 /* Editor Content */
@@ -80,6 +96,7 @@
   font-size: 16px;
   line-height: 1.6;
   color: #1f2937;
+  word-wrap: break-word; /* Prevent long words from causing overflow */
 }
 
 /* Code Block Styling */
@@ -87,9 +104,10 @@
   background-color: #f3f4f6;
   padding: 16px;
   border-radius: 6px;
-  overflow-x: auto;
+  overflow-x: auto; /* Allow horizontal scroll within code blocks if necessary */
   font-size: 14px;
   line-height: 1.5;
+  white-space: pre-wrap; /* Wrap code lines to prevent overflow */
 }
 
 .editor-content code {
@@ -135,6 +153,12 @@
 @media (max-width: 768px) {
   .note-view-section {
     padding: 16px;
+    margin-left: 0; /* Remove left margin on mobile */
+    width: 100%; /* Full width on mobile */
+  }
+
+  .note-content-container {
+    padding: 16px;
   }
 
   .note-content {
@@ -163,6 +187,12 @@
 /* Tablet Styles */
 @media (min-width: 769px) and (max-width: 1024px) {
   .note-view-section {
+    padding: 20px;
+    margin-left: 250px; /* Keep left margin on tablets */
+    width: calc(100% - 250px); /* Adjust width to account for sidebar */
+  }
+
+  .note-content-container {
     padding: 20px;
   }
 
