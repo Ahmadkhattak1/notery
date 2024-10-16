@@ -15,7 +15,7 @@ body {
     padding: 0;
     color: #4D4D4D; /* Primary text color */
     background-color: #FFFFFF; /* White background for a clean look */
-    overflow-x: hidden; /* Prevent horizontal scrolling on body */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* Utility Classes */
@@ -34,36 +34,49 @@ body {
     left: 0;
     right: 0;
     background-color: #f1fcff;
-    padding: 15px 20px;
+    padding: 10px 20px;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Space between title and profile */
+    justify-content: space-between; /* Space between left and right sections */
     z-index: 1500;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 10px; /* Gap between rows on smaller screens */
+    height: auto; /* Allow height to adjust based on content */
 }
 
-.app-header h1 {
+/* Header Left Section */
+.header-left {
+    display: flex;
+    align-items: center;
     flex: 1;
+    min-width: 0; /* Prevent overflow */
+}
+
+/* Header Title */
+.app-header h1 {
     text-align: left;
     color: #2193b0; /* Blue text for contrast */
     font-size: 28px;
     font-weight: 700;
     margin: 0;
+    flex-shrink: 0;
 }
 
-/* Header Buttons Container */
-.header-buttons {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+/* Header Center Section (Buttons) */
+.header-center {
     display: none; /* Hidden by default */
-    gap: 15px;
     align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0; /* Prevent overflow */
+    gap: 15px;
 }
 
-.app-header.note-open .header-buttons {
-    display: flex; /* Show when a note is open */
+/* Show Header Buttons When a Note is Open */
+.app-header.note-open .header-center {
+    display: flex;
 }
 
 /* Header Buttons Styling */
@@ -101,9 +114,10 @@ body {
     color: #ffffff;
 }
 
-/* Adjust Upload Image Container */
+/* Upload Image Container */
 .upload-image-container {
     display: flex;
+    align-items: center;
     gap: 10px; /* Space between Upload Image and Take Photo buttons */
 }
 
@@ -124,10 +138,12 @@ body {
     align-items: center;
     justify-content: flex-end;
     position: relative; /* For dropdown positioning */
-    flex: 0 0 auto; /* Prevent profile section from stretching */
+    flex: 1;
+    min-width: 0; /* Prevent overflow */
     margin-left: auto; /* Push profile section to the far right */
 }
 
+/* Profile Icon */
 .profile-icon {
     width: 40px;
     height: 40px;
@@ -157,6 +173,7 @@ body {
     font-weight: 600;
 }
 
+/* Profile Dropdown Menu */
 .profile-dropdown {
     position: absolute;
     top: 50px;
@@ -213,6 +230,7 @@ body {
 /* Adjust Main Container to Account for Fixed Header */
 .notes-container {
     display: flex;
+    flex-direction: column;
     min-height: 100vh; /* Allow container to grow beyond viewport */
     position: relative;
     background-color: #FFFFFF;
@@ -450,6 +468,19 @@ body {
     line-height: 1.6;
 }
 
+/* Placeholder for Title Input */
+.title-input.is-empty::before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    position: absolute;
+    pointer-events: none;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    line-height: 1.2;
+}
+
 /* Responsive Design */
 
 /* Mobile Styles */
@@ -461,82 +492,74 @@ body {
 
     /* Adjust Header Layout for Mobile */
     .app-header {
+        flex-direction: column; /* Stack elements vertically */
+        align-items: center;
+        gap: 10px;
         padding: 10px 15px;
     }
 
     .app-header h1 {
-        font-size: 22px;
-        margin-left: 50px; /* Space for hamburger icon */
-    }
-
-    /* Adjust Header Buttons for Mobile */
-    .header-buttons {
-        position: absolute;
-        top: 60px; /* Below the header */
-        left: 50%;
-        transform: translateX(-50%);
-        flex-direction: column;
-        background-color: #f1fcff;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        gap: 10px;
-        width: 90%;
-        z-index: 2000;
-        display: none;
-    }
-
-    .app-header.note-open .header-buttons {
-        display: flex;
-    }
-
-    .header-button,
-    .ai-notes-button {
-        width: 100%;
+        font-size: 24px;
         text-align: center;
+        margin-left: 0; /* Center the title */
+    }
+
+    /* Header Center (Buttons) - Display Below Title on Mobile */
+    .header-center {
+        width: 100%;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    /* Ensure Header Buttons are Centered and Fit Within Mobile Header */
+    .header-center .header-button,
+    .header-center .ai-notes-button {
+        padding: 6px 10px; /* Smaller padding for mobile */
+        font-size: 12px; /* Smaller font size for mobile */
+    }
+
+    /* Adjust Upload Image Container */
+    .upload-image-container {
+        gap: 5px; /* Reduce gap between buttons */
     }
 
     /* Adjust Profile Section */
     .profile-section {
-        position: absolute;
-        top: 15px;
-        right: 15px;
+        position: static; /* Remove absolute positioning */
+        margin-left: 0; /* Reset margin */
     }
 
-    /* Adjust Notes Container */
+    /* Adjust Notes Container Padding */
     .notes-container {
-        padding-top: 70px; /* Adjusted for smaller header */
+        padding-top: 120px; /* Adjusted for main header + buttons */
     }
 
-    /* Adjust Editor Content Area */
-    .editor-content {
-        width: 100%;
-        max-width: none;
+    /* Adjust Note Content Area Padding */
+    .note-content {
+        padding: 10px;
     }
 
     /* Adjust Toolbar */
     .toolbar {
-        width: 100%;
-        max-width: none;
-        padding: 10px 5px;
+        padding: 8px;
+        gap: 8px;
     }
 
     .toolbar button,
     .toolbar select {
+        padding: 6px 10px;
         font-size: 12px;
-        padding: 6px 8px;
     }
 
-    /* Adjust Close Button */
+    /* Adjust Editor Buttons */
     .editor-buttons {
-        width: 100%;
-        max-width: none;
-        padding: 0 10px;
+        flex-direction: column;
+        align-items: flex-end;
     }
 
     .close-button {
         width: 100%;
-        text-align: center;
+        padding: 8px 16px;
     }
 }
 
@@ -546,7 +569,7 @@ body {
         font-size: 24px;
     }
 
-    .header-buttons {
+    .header-center {
         gap: 15px;
     }
 
@@ -556,10 +579,15 @@ body {
         font-size: 14px;
     }
 
+    .toolbar {
+        padding: 10px;
+        gap: 10px;
+    }
+
     .toolbar button,
     .toolbar select {
-        font-size: 13px;
         padding: 7px 10px;
+        font-size: 13px;
     }
 
     .editor-content {
@@ -572,23 +600,48 @@ body {
     }
 }
 
-/* Additional Tightening on Small Devices */
+/* Additional Tightening on Very Small Devices */
 @media (max-width: 600px) {
     .app-header h1 {
         font-size: 20px;
-        margin-left: 50px;
     }
 
-    .header-button,
-    .ai-notes-button {
+    .header-center .header-button,
+    .header-center .ai-notes-button {
         font-size: 12px;
-        padding: 6px 10px;
+        padding: 5px 8px;
     }
 
     .toolbar button,
     .toolbar select {
         font-size: 11px;
         padding: 5px 8px;
+    }
+
+    .close-button {
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header h1 {
+        font-size: 18px;
+    }
+
+    .header-center .header-button,
+    .header-center .ai-notes-button {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+
+    .toolbar button,
+    .toolbar select {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+
+    .close-button {
+        padding: 5px 10px;
     }
 }
 
