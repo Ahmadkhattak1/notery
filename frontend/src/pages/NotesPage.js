@@ -35,6 +35,8 @@ import ResizableImage from '../extensions/ResizableImage';
 import './styling/NotesPage.css';
 import NoteEditor from '../components/NoteEditor.js';
 import Sidebar from '../components/Sidebar.js';
+import FloatingToolbar from '../components/FloatingToolbar.js'; // Import the FloatingToolbar component
+
 
 import CustomHeading from '../extensions/CustomHeading';
 import CustomParagraph from '../extensions/CustomParagraph';
@@ -1230,16 +1232,19 @@ const NotesPage = () => {
 
         {/* Notes Editor Section */}
         {activeNote ? (
-          <NoteEditor
-            activeNote={activeNote}
-            editor={editor}
-            textColor={textColor}
-            colorOptions={colorOptions}
-            handleImageUpload={handleImageUpload}
-            handleCameraCapture={handleCameraCapture}
-            closeNote={closeNote} // Pass closeNote function
-          />
-        ) : (
+          <>
+            <NoteEditor
+              activeNote={activeNote}
+              editor={editor}
+              textColor={textColor}
+              colorOptions={colorOptions}
+              handleImageUpload={handleImageUpload}
+              handleCameraCapture={handleCameraCapture}
+              closeNote={closeNote}
+            />
+            {/* Include the FloatingToolbar component and pass the editor instance */}
+            {editor && <FloatingToolbar editor={editor} />}
+          </>        ) : (
         <div class="note-view-section">
         <div class="no-note-wrapper">
           <div class="no-note-selected">
