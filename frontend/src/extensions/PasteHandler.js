@@ -1,18 +1,23 @@
 // PasteHandler.js
 
 import { Extension } from '@tiptap/core';
+import { Plugin } from 'prosemirror-state';
 
 const PasteHandler = Extension.create({
   name: 'pasteHandler',
 
   addProseMirrorPlugins() {
     return [
-      new this.editor.constructor.PMPlugin({
+      new Plugin({
         props: {
           handlePaste: (view, event) => {
-            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            const clipboardData = event.clipboardData || event.originalEvent.clipboardData;
+            const items = clipboardData.items;
+
+            let handled = false;
+
             for (const item of items) {
-              if (item.type.indexOf('image') === 0) {
+              if (item.type.startsWith('image/')) {
                 const file = item.getAsFile();
                 if (file) {
                   const reader = new FileReader();
@@ -25,10 +30,15 @@ const PasteHandler = Extension.create({
                   };
                   reader.readAsDataURL(file);
                 }
-                event.preventDefault();
-                return true;
+                handled = true;
               }
             }
+
+            if (handled) {
+              event.preventDefault();
+              return true;
+            }
+
             return false;
           },
         },

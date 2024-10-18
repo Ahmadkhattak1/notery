@@ -52,6 +52,13 @@ import { useNavigate } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 import { ClipLoader } from 'react-spinners';
+import Header from '../components/Header';
+import OfflineAlert from '../components/OfflineAlert';
+import SaveIndicator from '../components/SaveIndicator';
+import FolderModal from '../components/FolderModal';
+import NoteView from '../components/NoteView';
+import PasteHandler from '../extensions/PasteHandler'; // Ensure correct path
+import useOnlineStatus from '../hooks/useOnlineStatus'; // Ensure correct path
 
 Modal.setAppElement('#root'); // Important for accessibility
 
@@ -78,8 +85,9 @@ const NotesPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [activeNote, setActiveNote] = useState(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [offlineQueue, setOfflineQueue] = useState([]);
+
+  // Integrate the useOnlineStatus hook
+  const { isOnline, setOfflineQueue } = useOnlineStatus();
 
   const sidebarRef = useRef(null);
 
@@ -102,7 +110,7 @@ const NotesPage = () => {
   const initialLimit = 10;
   const loadMoreLimit = 10;
 
-  // Editor setup
+  // Editor setup with PasteHandler integration
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -138,6 +146,7 @@ const NotesPage = () => {
       Code,
       CustomHeading,
       CustomParagraph,
+      PasteHandler, // Add PasteHandler extension
     ],
     content: '<h1></h1>',
     editorProps: {
@@ -187,25 +196,8 @@ const NotesPage = () => {
         }
         return false;
       },
-      handlePaste: (view, event) => {
-        const { state } = view;
-        const { selection } = state;
-        const { $from, $to } = selection;
-
-        let hasImage = false;
-        state.doc.nodesBetween($from.pos, $to.pos, (node) => {
-          if (node.type.name === 'image') {
-            hasImage = true;
-          }
-        });
-
-        if (hasImage) {
-          event.preventDefault();
-          return true;
-        }
-
-        return false;
-      },
+      // Remove the existing handlePaste to prevent conflicts
+      // handlePaste: (view, event) => { ... },
     },
   });
 
@@ -455,33 +447,38 @@ const NotesPage = () => {
     )
       return;
 
-    try {
-      await deleteDoc(doc(db, 'notes', noteId));
-      console.log('Note deleted successfully:', noteId);
-      setNotesData((prevNotes) => {
-        // Find the folder containing this note
-        const folderId = Object.keys(prevNotes).find((fid) =>
-          prevNotes[fid].some((note) => note.id === noteId)
-        );
-        if (folderId) {
-          const updatedNotes = prevNotes[folderId].filter((note) => note.id !== noteId);
-          return {
-            ...prevNotes,
-            [folderId]: updatedNotes,
-          };
+    if (isOnline) {
+      try {
+        await deleteDoc(doc(db, 'notes', noteId));
+        console.log('Note deleted successfully:', noteId);
+        setNotesData((prevNotes) => {
+          // Find the folder containing this note
+          const folderId = Object.keys(prevNotes).find((fid) =>
+            prevNotes[fid].some((note) => note.id === noteId)
+          );
+          if (folderId) {
+            const updatedNotes = prevNotes[folderId].filter((note) => note.id !== noteId);
+            return {
+              ...prevNotes,
+              [folderId]: updatedNotes,
+            };
+          }
+          return prevNotes;
+        });
+        if (activeNote && activeNote.id === noteId) {
+          setActiveNote(null);
+          if (editor) {
+            editor.commands.setContent('<h1></h1>');
+            console.log('Editor content reset after deletion.');
+          }
         }
-        return prevNotes;
-      });
-      if (activeNote && activeNote.id === noteId) {
-        setActiveNote(null);
-        if (editor) {
-          editor.commands.setContent('<h1></h1>');
-          console.log('Editor content reset after deletion.');
-        }
+      } catch (error) {
+        console.error('Error deleting note:', error.message, error.code, error);
+        alert('Failed to delete the note. Please try again.');
       }
-    } catch (error) {
-      console.error('Error deleting note:', error.message, error.code, error);
-      alert('Failed to delete the note. Please try again.');
+    } else {
+      setOfflineQueue((prevQueue) => [...prevQueue, () => deleteDoc(doc(db, 'notes', noteId))]);
+      alert('Delete action queued due to offline status.');
     }
   };
 
@@ -973,39 +970,6 @@ const NotesPage = () => {
       });
   };
 
-  // Handle online/offline status
-  useEffect(() => {
-    const handleOnline = async () => {
-      setIsOnline(true);
-      console.log('Back online.');
-
-      if (offlineQueue.length > 0) {
-        const queuedActions = [...offlineQueue];
-        setOfflineQueue([]);
-        for (const action of queuedActions) {
-          try {
-            await action();
-          } catch (error) {
-            console.error('Error processing queued action:', error);
-          }
-        }
-      }
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      console.log('Offline.');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [offlineQueue]);
-
   // Handle clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1061,101 +1025,24 @@ const NotesPage = () => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-    <div className="notes-container">
-    <header className={`app-header ${activeNote ? 'note-open' : ''}`}>
-        <div className="header-left">
-          <h1>Notery</h1>
-        </div>
-
-        {/* Header Buttons - Visible Only When a Note is Open */}
-        <div className="header-center">
-          {/* Upload Image and AI Notes Buttons */}
-          <div className="upload-image-container">
-            <label htmlFor="imageUploadHeader" className="header-button">
-              📷 Upload Image
-            </label>
-            <input
-              type="file"
-              id="imageUploadHeader"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-            <label htmlFor="cameraCaptureHeader" className="header-button">
-              📷 Take Photo
-            </label>
-            <input
-              type="file"
-              id="cameraCaptureHeader"
-              accept="image/*"
-              capture="environment"
-              onChange={handleCameraCapture}
-              style={{ display: 'none' }}
-            />
-          </div>
-          <button
-            className="header-button ai-notes-button"
-            onClick={handleAINotesClick}
-            title="AI Notes"
-          >
-            📝 AI Notes
-          </button>
-        </div>
-
-        {/* Profile Section */}
-        <div className="profile-section">
-          <div
-            className="profile-icon"
-            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-          >
-            {user && user.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="profile-picture" />
-            ) : (
-              <div className="profile-placeholder">P</div>
-            )}
-          </div>
-          {isProfileDropdownOpen && (
-            <div className="profile-dropdown">
-              <ul>
-                <li
-                  onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    navigate('/profile');
-                  }}
-                >
-                  Profile Settings
-                </li>
-                <li
-                  onClick={() => {
-                    setIsProfileDropdownOpen(false);
-                    handleLogout();
-                  }}
-                >
-                  Logout
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar Toggle Button (Hamburger Icon) */}
-        <button className="sidebar-toggle-button">
-          ☰
-        </button>
-      </header>
-
+      <div className="notes-container">
+        <Header
+          user={user}
+          isProfileDropdownOpen={isProfileDropdownOpen}
+          setIsProfileDropdownOpen={setIsProfileDropdownOpen}
+          handleImageUpload={handleImageUpload}
+          handleCameraCapture={handleCameraCapture}
+          handleAINotesClick={handleAINotesClick}
+          setIsSidebarOpen={setIsSidebarOpen}
+          activeNote={activeNote}
+          isSaved={isSaved}
+        />
 
         {/* Offline Alert */}
-        {!isOnline && (
-          <div className="offline-alert">
-            <p>You are offline. Changes will be saved when the connection is restored.</p>
-          </div>
-        )}
+        {!isOnline && <OfflineAlert />}
 
         {/* Save Indicator */}
-        <div className={`save-indicator ${!isSaved ? 'saving' : ''}`}>
-          {isSaved ? 'All changes saved' : 'Saving...'}
-        </div>
+        <SaveIndicator isSaved={isSaved} />
 
         {/* Sidebar Toggle Button */}
         <button
@@ -1201,48 +1088,18 @@ const NotesPage = () => {
         />
 
         {/* Modal for Adding/Editing Folders */}
-        <Modal
-          isOpen={isFolderModalOpen}
-          onRequestClose={() => setIsFolderModalOpen(false)}
-          contentLabel={editingFolder ? 'Edit Folder' : 'Add Folder'}
-          className="modal-content"
-          overlayClassName="ReactModal__Overlay"
-        >
-          <div className="folder-modal-content">
-            <h2>{editingFolder ? 'Edit Folder' : 'Add Folder'}</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (editingFolder) {
-                  handleRenameFolder();
-                } else {
-                  handleAddFolder();
-                }
-              }}
-            >
-              <input
-                type="text"
-                value={editingFolder ? editFolderName : folderName}
-                onChange={(e) =>
-                  editingFolder ? setEditFolderName(e.target.value) : setFolderName(e.target.value)
-                }
-                placeholder="Folder Name"
-                required
-                className="folder-name-input"
-                ref={titleInputRef}
-                autoFocus
-              />
-              <div className="modal-buttons">
-                <button type="submit" className="save-button" disabled={isCreatingFolder}>
-                  {isCreatingFolder ? 'Saving...' : 'Save'}
-                </button>
-                <button type="button" className="cancel-button" onClick={() => setIsFolderModalOpen(false)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </Modal>
+        <FolderModal
+          isFolderModalOpen={isFolderModalOpen}
+          setIsFolderModalOpen={setIsFolderModalOpen}
+          folderName={folderName}
+          setFolderName={setFolderName}
+          editingFolder={editingFolder}
+          editFolderName={editFolderName}
+          setEditFolderName={setEditFolderName}
+          handleAddFolder={handleAddFolder}
+          handleRenameFolder={handleRenameFolder}
+          isCreatingFolder={isCreatingFolder}
+        />
 
         {/* Notes Editor Section */}
         {activeNote ? (
@@ -1259,13 +1116,7 @@ const NotesPage = () => {
             {editor && <FloatingToolbar editor={editor} />}
           </>
         ) : (
-          <div className="note-view-section">
-            <div className="no-note-wrapper">
-              <div className="no-note-selected">
-                <p>Please select or create a note to start editing.</p>
-              </div>
-            </div>
-          </div>
+          <NoteView />
         )}
       </div>
     </DragDropContext>
