@@ -28,10 +28,10 @@ const FloatingToolbar = ({ editor }) => {
   const toolbarRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showBgColorPicker, setShowBgColorPicker] = useState(false);
-  const [showAlignDropdown, setShowAlignDropdown] = useState(false);
-  const [showParagraphDropdown, setShowParagraphDropdown] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Single state to manage which dropdown is active
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   // Define the specific color options provided
   const textColorOptions = [
@@ -58,7 +58,7 @@ const FloatingToolbar = ({ editor }) => {
     { name: 'Blue', color: '#E7F3F8' },
     { name: 'Purple', color: '#F6F3F9' },
     { name: 'Pink', color: '#FAF1F5' },
-    { name: 'Red', color: '##FDEBEC' },
+    { name: 'Red', color: '#FDEBEC' }, // Corrected color code
   ];
 
   const updateToolbar = () => {
@@ -92,7 +92,7 @@ const FloatingToolbar = ({ editor }) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    if (top < 0) {
+    if (top < 8) { // Added padding from top
       top = selectionRect.bottom + 10;
     }
     if (left < 8) {
@@ -121,13 +121,10 @@ const FloatingToolbar = ({ editor }) => {
   }, [editor]);
 
   useEffect(() => {
-    // Close pickers when clicking outside
+    // Close active dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (toolbarRef.current && !toolbarRef.current.contains(event.target)) {
-        setShowColorPicker(false);
-        setShowBgColorPicker(false);
-        setShowAlignDropdown(false);
-        setShowParagraphDropdown(false);
+        setActiveDropdown(null);
       }
     };
 
@@ -141,6 +138,7 @@ const FloatingToolbar = ({ editor }) => {
 
   const applyStyle = (command) => {
     command();
+    setHasUnsavedChanges(true);
   };
 
   return (
@@ -223,7 +221,9 @@ const FloatingToolbar = ({ editor }) => {
       {/* Paragraph Dropdown */}
       <div className="paragraph-dropdown-container">
         <button
-          onClick={() => setShowParagraphDropdown(!showParagraphDropdown)}
+          onClick={() =>
+            setActiveDropdown((prev) => (prev === 'paragraph' ? null : 'paragraph'))
+          }
           className={
             editor.isActive('paragraph') ||
             editor.isActive('codeBlock') ||
@@ -236,49 +236,53 @@ const FloatingToolbar = ({ editor }) => {
           <FontAwesomeIcon icon={faParagraph} />
           <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
         </button>
-        {showParagraphDropdown && (
-          <div className="paragraph-dropdown-popup">
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().setParagraph().run());
-                setShowParagraphDropdown(false);
-              }}
-              className={editor.isActive('paragraph') ? 'is-active' : ''}
-              title="Normal Paragraph"
-            >
-              <FontAwesomeIcon icon={faParagraph} />
-              <span>Normal</span>
-            </button>
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().toggleCodeBlock().run());
-                setShowParagraphDropdown(false);
-              }}
-              className={editor.isActive('codeBlock') ? 'is-active' : ''}
-              title="Code Block"
-            >
-              <FontAwesomeIcon icon={faCode} />
-              <span>Code Block</span>
-            </button>
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().toggleBlockquote().run());
-                setShowParagraphDropdown(false);
-              }}
-              className={editor.isActive('blockquote') ? 'is-active' : ''}
-              title="Blockquote"
-            >
-              <FontAwesomeIcon icon={faQuoteRight} />
-              <span>Blockquote</span>
-            </button>
-          </div>
-        )}
+        <div
+          className={`paragraph-dropdown-popup ${
+            activeDropdown === 'paragraph' ? 'active' : ''
+          }`}
+        >
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().setParagraph().run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive('paragraph') ? 'is-active' : ''}
+            title="Normal Paragraph"
+          >
+            <FontAwesomeIcon icon={faParagraph} />
+            <span>Normal</span>
+          </button>
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().toggleCodeBlock().run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive('codeBlock') ? 'is-active' : ''}
+            title="Code Block"
+          >
+            <FontAwesomeIcon icon={faCode} />
+            <span>Code Block</span>
+          </button>
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().toggleBlockquote().run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive('blockquote') ? 'is-active' : ''}
+            title="Blockquote"
+          >
+            <FontAwesomeIcon icon={faQuoteRight} />
+            <span>Blockquote</span>
+          </button>
+        </div>
       </div>
 
       {/* Alignment Dropdown */}
       <div className="align-dropdown-container">
         <button
-          onClick={() => setShowAlignDropdown(!showAlignDropdown)}
+          onClick={() =>
+            setActiveDropdown((prev) => (prev === 'align' ? null : 'align'))
+          }
           className={
             editor.isActive({ textAlign: 'left' }) ||
             editor.isActive({ textAlign: 'center' }) ||
@@ -291,105 +295,115 @@ const FloatingToolbar = ({ editor }) => {
           <FontAwesomeIcon icon={faAlignLeft} />
           <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
         </button>
-        {showAlignDropdown && (
-          <div className="align-dropdown-popup">
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().setTextAlign('left').run());
-                setShowAlignDropdown(false);
-              }}
-              className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
-              title="Align Left"
-            >
-              <FontAwesomeIcon icon={faAlignLeft} />
-              <span>Left</span>
-            </button>
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().setTextAlign('center').run());
-                setShowAlignDropdown(false);
-              }}
-              className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
-              title="Align Center"
-            >
-              <FontAwesomeIcon icon={faAlignCenter} />
-              <span>Center</span>
-            </button>
-            <button
-              onClick={() => {
-                applyStyle(() => editor.chain().focus().setTextAlign('right').run());
-                setShowAlignDropdown(false);
-              }}
-              className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
-              title="Align Right"
-            >
-              <FontAwesomeIcon icon={faAlignRight} />
-              <span>Right</span>
-            </button>
-          </div>
-        )}
+        <div
+          className={`align-dropdown-popup ${
+            activeDropdown === 'align' ? 'active' : ''
+          }`}
+        >
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().setTextAlign('left').run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+            title="Align Left"
+          >
+            <FontAwesomeIcon icon={faAlignLeft} />
+            <span>Left</span>
+          </button>
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().setTextAlign('center').run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+            title="Align Center"
+          >
+            <FontAwesomeIcon icon={faAlignCenter} />
+            <span>Center</span>
+          </button>
+          <button
+            onClick={() => {
+              applyStyle(() => editor.chain().focus().setTextAlign('right').run());
+              setActiveDropdown(null);
+            }}
+            className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+            title="Align Right"
+          >
+            <FontAwesomeIcon icon={faAlignRight} />
+            <span>Right</span>
+          </button>
+        </div>
       </div>
 
       {/* Text Color Picker */}
       <div className="color-picker-container">
         <button
-          onClick={() => setShowColorPicker(!showColorPicker)}
+          onClick={() =>
+            setActiveDropdown((prev) => (prev === 'textColor' ? null : 'textColor'))
+          }
           className={editor.isActive('textStyle', { color: true }) ? 'is-active' : ''}
           title="Text Color"
         >
           <FontAwesomeIcon icon={faPalette} />
         </button>
-        {showColorPicker && (
-          <div className="color-picker-popup">
-            {textColorOptions.map(({ name, color }) => (
-              <button
-                key={color}
-                className="color-button"
-                style={{ backgroundColor: color }}
-                onClick={() => {
-                  applyStyle(() => editor.chain().focus().setColor(color).run());
-                  setShowColorPicker(false);
-                }}
-                title={name}
-              >
-                {editor.isActive('textStyle', { color })
-                  ? <FontAwesomeIcon icon={faCheck} className="color-check-icon" />
-                  : null}
-              </button>
-            ))}
-          </div>
-        )}
+        <div
+          className={`color-picker-popup ${
+            activeDropdown === 'textColor' ? 'active' : ''
+          }`}
+        >
+          {textColorOptions.map(({ name, color }) => (
+            <button
+              key={color}
+              className="color-button"
+              style={{ backgroundColor: color }}
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setColor(color).run());
+                setActiveDropdown(null);
+              }}
+              title={name}
+            >
+              {editor.isActive('textStyle', { color })
+                ? <FontAwesomeIcon icon={faCheck} className="color-check-icon" />
+                : null}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Background Color Picker */}
       <div className="bg-color-picker-container">
         <button
-          onClick={() => setShowBgColorPicker(!showBgColorPicker)}
+          onClick={() =>
+            setActiveDropdown((prev) => (prev === 'bgColor' ? null : 'bgColor'))
+          }
           className={editor.isActive('highlight', { color: true }) ? 'is-active' : ''}
           title="Background Color"
         >
           <FontAwesomeIcon icon={faHighlighter} />
         </button>
-        {showBgColorPicker && (
-          <div className="bg-color-picker-popup">
-            {bgColorOptions.map(({ name, color }) => (
-              <button
-                key={color}
-                className="bg-color-button"
-                style={{ backgroundColor: color }}
-                onClick={() => {
-                  applyStyle(() => editor.chain().focus().setHighlight({ color }).run());
-                  setShowBgColorPicker(false);
-                }}
-                title={name}
-              >
-                {editor.isActive('highlight', { color })
-                  ? <FontAwesomeIcon icon={faCheck} className="bg-color-check-icon" />
-                  : null}
-              </button>
-            ))}
-          </div>
-        )}
+        <div
+          className={`bg-color-picker-popup ${
+            activeDropdown === 'bgColor' ? 'active' : ''
+          }`}
+        >
+          {bgColorOptions.map(({ name, color }) => (
+            <button
+              key={color}
+              className="bg-color-button"
+              style={{ backgroundColor: color }}
+              onClick={() => {
+                applyStyle(() => editor.chain().focus().setHighlight({ color }).run());
+                setActiveDropdown(null);
+              }}
+              title={name}
+            >
+              {editor.isActive('highlight', { color })
+                ? <FontAwesomeIcon icon={faCheck} className="bg-color-check-icon" />
+                : null}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

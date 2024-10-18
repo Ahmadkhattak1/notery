@@ -1,7 +1,8 @@
 /* src/components/styling/FloatingToolbar.css */
 
+/* General Toolbar Styles */
 .floating-toolbar {
-  position: absolute;
+  position: fixed; /* Changed from absolute to fixed */
   display: flex;
   flex-wrap: wrap;
   background-color: #fff;
@@ -9,11 +10,17 @@
   border-radius: 8px;
   padding: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
+  z-index: 10000; /* Increased z-index to stay above other elements */
   animation: fadeIn 0.3s ease-in-out;
   transition: all 0.3s ease-in-out;
+  
+  /* Default positioning */
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
+/* Animation for Toolbar Appearance */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -25,6 +32,7 @@
   }
 }
 
+/* Button Styles within Toolbar */
 .floating-toolbar button {
   background: none;
   border: none;
@@ -55,25 +63,35 @@
   font-size: 14px;
 }
 
+/* Dropdown Container Styles */
 .paragraph-dropdown-container,
-.align-dropdown-container {
+.align-dropdown-container,
+.color-picker-container,
+.bg-color-picker-container {
   position: relative;
 }
 
+/* Dropdown Button Styles */
 .paragraph-dropdown-container button,
-.align-dropdown-container button {
+.align-dropdown-container button,
+.color-picker-container button,
+.bg-color-picker-container button {
   display: flex;
   align-items: center;
 }
 
+/* Dropdown Icon Styles */
 .dropdown-icon {
   margin-left: 4px;
 }
 
+/* Dropdown Popup Styles */
 .paragraph-dropdown-popup,
-.align-dropdown-popup {
+.align-dropdown-popup,
+.color-picker-popup,
+.bg-color-picker-popup {
   position: absolute;
-  top: calc(100% + 6px);
+  top: 100%; /* Positions the dropdown below the button */
   left: 50%;
   transform: translateX(-50%);
   background-color: #fff;
@@ -81,12 +99,24 @@
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
+  z-index: 10001; /* Higher than toolbar */
+  display: none; /* Hidden by default */
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* Show Dropdown When Active */
+.paragraph-dropdown-popup.active,
+.align-dropdown-popup.active,
+.color-picker-popup.active,
+.bg-color-picker-popup.active {
+  display: grid;
+}
+
+/* Dropdown Button Styles within Dropdowns */
 .paragraph-dropdown-popup button,
-.align-dropdown-popup button {
+.align-dropdown-popup button,
+.color-picker-popup button,
+.bg-color-picker-popup button {
   display: flex;
   align-items: center;
   background: none;
@@ -100,12 +130,16 @@
 }
 
 .paragraph-dropdown-popup button:hover,
-.align-dropdown-popup button:hover {
+.align-dropdown-popup button:hover,
+.color-picker-popup button:hover,
+.bg-color-picker-popup button:hover {
   background-color: #f0f0f0;
 }
 
 .paragraph-dropdown-popup button.is-active,
-.align-dropdown-popup button.is-active {
+.align-dropdown-popup button.is-active,
+.color-picker-popup button.is-active,
+.bg-color-picker-popup button.is-active {
   background-color: #e0e0e0;
   color: #000;
 }
@@ -115,53 +149,7 @@
   margin-left: 6px;
 }
 
-/* Color Picker Styles */
-.color-picker-container,
-.bg-color-picker-container {
-  position: relative;
-}
-
-.color-picker-popup,
-.bg-color-picker-popup {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: repeat(6, 28px);
-  gap: 6px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
-  animation: slideDown 0.3s ease-in-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.color-picker-popup::before,
-.bg-color-picker-popup::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 0 8px 8px 8px;
-  border-style: solid;
-  border-color: transparent transparent #ddd transparent;
-}
-
+/* Color Picker Button Styles */
 .color-button,
 .bg-color-button {
   width: 28px;
@@ -188,10 +176,16 @@
   font-size: 12px;
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
+/* Responsive Design for Mobile Devices */
+@media (max-width: 768px) {
   .floating-toolbar {
-    max-width: 100%;
+    top: auto;
+    bottom: 10px; /* Position toolbar at the bottom on mobile */
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 90%;
+    width: auto;
+    flex-wrap: nowrap;
     overflow-x: auto;
     padding: 8px;
   }
@@ -203,14 +197,40 @@
     font-size: 14px;
   }
 
+  .paragraph-dropdown-popup,
+  .align-dropdown-popup,
+  .color-picker-popup,
+  .bg-color-picker-popup {
+    top: -10px; /* Position dropdowns above the toolbar */
+    left: 50%;
+    transform: translateX(-50%);
+    grid-template-columns: repeat(4, 28px); /* Adjust number of columns */
+    width: auto;
+  }
+
+  .paragraph-dropdown-popup::before,
+  .align-dropdown-popup::before,
+  .color-picker-popup::before,
+  .bg-color-picker-popup::before {
+    top: auto;
+    bottom: 100%;
+    border-width: 8px 8px 0 8px;
+    border-color: #ddd transparent transparent transparent;
+  }
+
   .color-picker-popup,
   .bg-color-picker-popup {
     grid-template-columns: repeat(4, 28px);
+    width: 100%;
   }
+}
 
-  .paragraph-dropdown-popup,
-  .align-dropdown-popup {
-    left: 50%;
-    transform: translateX(-50%);
-  }
+/* Ensuring Dropdowns Appear Above the Toolbar */
+.dropdown-popup {
+  z-index: 10001; /* Ensure dropdowns have a higher z-index */
+}
+
+/* Prevent Dropdowns from Being Cut Off */
+body {
+  overflow: visible;
 }

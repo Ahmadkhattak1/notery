@@ -1,0 +1,84 @@
+/* src/components/styling/NoteView.css */
+
+.note-view-section {
+    padding: 20px;
+  }
+  
+  .noteview-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .welcome-section {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .welcome-section h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .welcome-section p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+  
+  .recent-notes-section {
+    margin-top: 20px;
+  }
+  
+  .recent-notes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  .note-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    width: 280px;
+    padding: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .note-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+  }
+  
+  .note-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    color: #202124;
+  }
+  
+  .note-card p {
+    font-size: 0.95rem;
+    color: #5f6368;
+    margin-bottom: 12px;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  
+  .note-date {
+    font-size: 0.85rem;
+    color: #80868b;
+    align-self: flex-end;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .note-card {
+      width: 90%;
+    }
+  }
+  

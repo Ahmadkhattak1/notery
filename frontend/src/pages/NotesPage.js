@@ -57,8 +57,8 @@ import OfflineAlert from '../components/OfflineAlert';
 import SaveIndicator from '../components/SaveIndicator';
 import FolderModal from '../components/FolderModal';
 import NoteView from '../components/NoteView';
-import PasteHandler from '../extensions/PasteHandler'; // Ensure correct path
-import useOnlineStatus from '../hooks/useOnlineStatus'; // Ensure correct path
+import PasteHandler from '../extensions/PasteHandler';
+import useOnlineStatus from '../hooks/useOnlineStatus';
 
 Modal.setAppElement('#root'); // Important for accessibility
 
@@ -196,8 +196,6 @@ const NotesPage = () => {
         }
         return false;
       },
-      // Remove the existing handlePaste to prevent conflicts
-      // handlePaste: (view, event) => { ... },
     },
   });
 
@@ -305,7 +303,7 @@ const NotesPage = () => {
 
           // Update the note in the state
           setNotesData((prevNotes) => {
-            const folderId = activeNote.folderId;
+            const folderId = activeNote.folderId || 'unassigned';
             const folderNotes = prevNotes[folderId] || [];
             const updatedNotes = folderNotes.map((note) =>
               note.id === activeNote.id ? { ...note, title, updatedAt: new Date() } : note
@@ -357,13 +355,11 @@ const NotesPage = () => {
           await deleteDoc(doc(db, 'notes', activeNote.id));
           console.log('Empty note deleted:', activeNote.id);
           setNotesData((prevNotes) => {
-            const folderId = activeNote.folderId;
+            const folderId = activeNote.folderId || 'unassigned';
             const updatedNotes = { ...prevNotes };
-            if (folderId) {
-              updatedNotes[folderId] = updatedNotes[folderId].filter((note) => note.id !== activeNote.id);
-            } else {
-              updatedNotes['unassigned'] = updatedNotes['unassigned'].filter((note) => note.id !== activeNote.id);
-            }
+            updatedNotes[folderId] = updatedNotes[folderId].filter(
+              (note) => note.id !== activeNote.id
+            );
             return updatedNotes;
           });
           setActiveNote(null);
@@ -662,7 +658,7 @@ const NotesPage = () => {
 
   // Handle note creation
   const handleAddNoteAction = async (folderId) => {
-    if (!editor) return;
+    if (!editor || isCreatingNote) return; // Prevent multiple clicks
 
     setIsCreatingNote(true);
 
@@ -673,7 +669,7 @@ const NotesPage = () => {
         folderId: folderId || null,
         userId: user.uid,
         createdAt: serverTimestamp(),
-        updatedAt: null,
+        updatedAt: serverTimestamp(), // Set updatedAt to serverTimestamp()
       });
 
       const newNote = {
@@ -682,12 +678,12 @@ const NotesPage = () => {
         folderId: folderId || null,
         userId: user.uid,
         createdAt: new Date(),
-        updatedAt: null,
+        updatedAt: new Date(),
       };
 
       setNotesData((prevNotes) => ({
         ...prevNotes,
-        [folderId]: [newNote, ...(prevNotes[folderId] || [])],
+        [folderId || 'unassigned']: [newNote, ...(prevNotes[folderId || 'unassigned'] || [])],
       }));
 
       setActiveNote(newNote);
@@ -1112,11 +1108,12 @@ const NotesPage = () => {
               handleCameraCapture={handleCameraCapture}
               closeNote={closeNote}
             />
-            {/* Include the FloatingToolbar component and pass the editor instance */}
-            {editor && <FloatingToolbar editor={editor} />}
+            {editor && (
+              <FloatingToolbar editor={editor} setHasUnsavedChanges={setHasUnsavedChanges} />
+            )}
           </>
         ) : (
-          <NoteView />
+          <NoteView openNote={openNote} handleAddNoteAction={handleAddNoteAction} />
         )}
       </div>
     </DragDropContext>
