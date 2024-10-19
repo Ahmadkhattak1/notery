@@ -50,7 +50,6 @@ import { getAuth, signOut, updateProfile } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { useNavigate } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import imageCompression from 'browser-image-compression';
 import { ClipLoader } from 'react-spinners';
 import Header from '../components/Header';
 import OfflineAlert from '../components/OfflineAlert';
@@ -59,6 +58,9 @@ import FolderModal from '../components/FolderModal';
 import NoteView from '../components/NoteView';
 import PasteHandler from '../extensions/PasteHandler';
 import useOnlineStatus from '../hooks/useOnlineStatus';
+
+// Import the compressImage utility
+import { compressImage } from '../utils/imageCompression';
 
 Modal.setAppElement('#root'); // Important for accessibility
 
@@ -230,7 +232,7 @@ const NotesPage = () => {
           setIsSaved(false);
           setHasUnsavedChanges(true);
         }
-      }, 1500); // 1.5-second delay
+      }, 1000); // 1-second delay
 
       editor.on('update', handleAutoSave);
 
@@ -243,7 +245,35 @@ const NotesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, activeNote]);
 
-  // Save note function
+  // State for Confirmation Modal
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    type: '', // 'closeNote', 'switchNote', 'deleteNote', 'deleteFolder'
+    action: null,
+    message: '',
+  });
+
+  // Function to open the confirmation modal
+  const openConfirmModal = (type, action, message) => {
+    setModalContent({ type, action, message });
+    setIsConfirmModalOpen(true);
+  };
+
+  // Function to close the confirmation modal
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setModalContent({ type: '', action: null, message: '' });
+  };
+
+  // Handle confirmation action
+  const handleConfirm = () => {
+    if (modalContent.action) {
+      modalContent.action();
+    }
+    closeConfirmModal();
+  };
+
+  // Handle save note function (remains unchanged)
   const handleSaveNote = async () => {
     if (!editor) {
       console.warn('Editor instance is not available.');
@@ -334,17 +364,22 @@ const NotesPage = () => {
   // Function to close a note and handle empty note deletion
   const closeNote = async () => {
     if (hasUnsavedChanges) {
-      const confirmSave = window.confirm(
+      // Keep the confirmation modal for unsaved changes
+      openConfirmModal(
+        'closeNote',
+        async () => {
+          await handleSaveNote();
+          setHasUnsavedChanges(false);
+          proceedToCloseNote();
+        },
         'You have unsaved changes. Do you want to save them before closing?'
       );
-      if (confirmSave) {
-        await handleSaveNote();
-      } else {
-        // Optionally, discard changes
-        setHasUnsavedChanges(false);
-      }
+    } else {
+      proceedToCloseNote();
     }
+  };
 
+  const proceedToCloseNote = async () => {
     if (activeNote) {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = editor.getHTML();
@@ -356,11 +391,13 @@ const NotesPage = () => {
           console.log('Empty note deleted:', activeNote.id);
           setNotesData((prevNotes) => {
             const folderId = activeNote.folderId || 'unassigned';
-            const updatedNotes = { ...prevNotes };
-            updatedNotes[folderId] = updatedNotes[folderId].filter(
+            const updatedNotes = prevNotes[folderId].filter(
               (note) => note.id !== activeNote.id
             );
-            return updatedNotes;
+            return {
+              ...prevNotes,
+              [folderId]: updatedNotes,
+            };
           });
           setActiveNote(null);
           if (editor) {
@@ -379,20 +416,24 @@ const NotesPage = () => {
     }
   };
 
-  // Open note function
+  // Open note function with modal confirmation
   const openNote = async (note) => {
     if (hasUnsavedChanges) {
-      const confirmSwitch = window.confirm(
+      openConfirmModal(
+        'switchNote',
+        async () => {
+          await handleSaveNote();
+          setHasUnsavedChanges(false);
+          proceedToOpenNote(note);
+        },
         'You have unsaved changes. Do you want to save them before opening another note?'
       );
-      if (confirmSwitch) {
-        await handleSaveNote();
-      } else {
-        // Optionally, discard changes
-        setHasUnsavedChanges(false);
-      }
+    } else {
+      proceedToOpenNote(note);
     }
+  };
 
+  const proceedToOpenNote = async (note) => {
     try {
       const noteRef = doc(db, 'notes', note.id);
       const noteSnap = await getDoc(noteRef);
@@ -433,15 +474,9 @@ const NotesPage = () => {
     }
   };
 
-  // Delete note function
-  const handleDeleteNote = async (noteId, requireConfirmation = true) => {
-    if (
-      requireConfirmation &&
-      !window.confirm(
-        'Are you sure you want to delete this note? This action cannot be undone.'
-      )
-    )
-      return;
+  // Delete note function without confirmation (handled by Sidebar.js)
+  const handleDeleteNote = async (noteId) => {
+    console.log('handleDeleteNote called for note:', noteId);
 
     if (isOnline) {
       try {
@@ -473,7 +508,10 @@ const NotesPage = () => {
         alert('Failed to delete the note. Please try again.');
       }
     } else {
-      setOfflineQueue((prevQueue) => [...prevQueue, () => deleteDoc(doc(db, 'notes', noteId))]);
+      setOfflineQueue((prevQueue) => [
+        ...prevQueue,
+        () => deleteDoc(doc(db, 'notes', noteId)),
+      ]);
       alert('Delete action queued due to offline status.');
     }
   };
@@ -793,14 +831,8 @@ const NotesPage = () => {
     await deleteQueryBatch();
   };
 
+  // Delete folder function without confirmation (handled by Sidebar.js)
   const handleDeleteFolder = async (folderId) => {
-    if (
-      !window.confirm(
-        'Are you sure you want to delete this folder? All notes within will also be permanently deleted. This action cannot be undone.'
-      )
-    )
-      return;
-
     try {
       // Delete all notes within the folder
       await deleteNotesInFolder(folderId);
@@ -910,18 +942,10 @@ const NotesPage = () => {
     if (!file) return;
 
     try {
-      // Compress the image before uploading
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
+      // Compress the image before uploading using the compressImage utility
+      const compressedFile = await compressImage(file, 1, 1920); // 1MB max size, 1920px max dimension
 
-      const storageRef = ref(
-        storage,
-        `images/${user.uid}/${Date.now()}_${compressedFile.name}`
-      );
+      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${compressedFile.name}`);
 
       await uploadBytes(storageRef, compressedFile);
 
@@ -951,18 +975,10 @@ const NotesPage = () => {
     if (!file) return;
 
     try {
-      // Compress the image before uploading
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
+      // Compress the image before uploading using the compressImage utility
+      const compressedFile = await compressImage(file, 1, 1920); // 1MB max size, 1920px max dimension
 
-      const storageRef = ref(
-        storage,
-        `images/${user.uid}/${Date.now()}_${compressedFile.name}`
-      );
+      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${compressedFile.name}`);
 
       await uploadBytes(storageRef, compressedFile);
 
@@ -992,13 +1008,8 @@ const NotesPage = () => {
     if (!file) return;
 
     try {
-      // Compress the image before uploading
-      const options = {
-        maxSizeMB: 0.5, // 500KB max size
-        maxWidthOrHeight: 1024, // Adjust as needed
-        useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
+      // Compress the image before uploading using the compressImage utility
+      const compressedFile = await compressImage(file, 0.5, 1024); // 0.5MB max size, 1024px max dimension
 
       const storageRef = ref(
         storage,
@@ -1136,7 +1147,7 @@ const NotesPage = () => {
           ref={sidebarRef}
           folders={folders}
           handleEditFolder={handleEditFolder}
-          handleDeleteFolder={handleDeleteFolder}
+          handleDeleteFolder={handleDeleteFolder} // Now handles deletion without confirmation
           handleAddNote={handleAddNoteAction}
           openAddFolderModal={openAddFolderModal}
           openNote={openNote}
@@ -1156,7 +1167,7 @@ const NotesPage = () => {
           setSelectedNoteDropdown={setSelectedNoteDropdown}
           isNoteDropdownOpen={isNoteDropdownOpen}
           setIsNoteDropdownOpen={setIsNoteDropdownOpen}
-          handleDeleteNote={handleDeleteNote}
+          handleDeleteNote={handleDeleteNote} // Now handles deletion without confirmation
           isCreatingNote={isCreatingNote}
           perFolderLoadingNotes={perFolderLoadingNotes}
           perFolderHasMoreNotes={perFolderHasMoreNotes}
@@ -1176,6 +1187,26 @@ const NotesPage = () => {
           handleRenameFolder={handleRenameFolder}
           isCreatingFolder={isCreatingFolder}
         />
+
+        {/* Confirmation Modal */}
+        <Modal
+          isOpen={isConfirmModalOpen}
+          onRequestClose={closeConfirmModal}
+          contentLabel="Confirmation Modal"
+          className="confirmation-modal"
+          overlayClassName="confirmation-modal-overlay"
+        >
+          <h2>Confirm Action</h2>
+          <p>{modalContent.message}</p>
+          <div className="modal-buttons">
+            <button onClick={handleConfirm} className="confirm-button">
+              Yes
+            </button>
+            <button onClick={closeConfirmModal} className="cancel-button">
+              Cancel
+            </button>
+          </div>
+        </Modal>
 
         {/* Notes Editor Section */}
         {activeNote ? (

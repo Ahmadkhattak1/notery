@@ -1,4 +1,4 @@
-// Sidebar.js
+// src/components/Sidebar.js
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
@@ -12,6 +12,10 @@ import {
   FaEdit,
   FaTrash,
 } from 'react-icons/fa';
+import Modal from 'react-modal'; // Import react-modal
+
+// Set the app element for accessibility
+Modal.setAppElement('#root');
 
 const Sidebar = React.forwardRef((props, ref) => {
   const {
@@ -45,6 +49,14 @@ const Sidebar = React.forwardRef((props, ref) => {
   const sidebarRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
 
+  // State for Confirmation Modal
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    type: '', // 'note' or 'folder'
+    id: '',
+    name: '',
+  });
+
   const checkOverflow = () => {
     const sidebar = sidebarRef.current;
     if (sidebar) {
@@ -63,6 +75,29 @@ const Sidebar = React.forwardRef((props, ref) => {
   useEffect(() => {
     checkOverflow();
   }, [folders, notes, isSidebarOpen]);
+
+  // Function to open the confirmation modal
+  const openConfirmModal = (type, id, name = '') => {
+    setModalContent({ type, id, name });
+    setIsConfirmModalOpen(true);
+  };
+
+  // Function to close the confirmation modal
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setModalContent({ type: '', id: '', name: '' });
+  };
+
+  // Handle confirmation action
+  const handleConfirm = () => {
+    const { type, id } = modalContent;
+    if (type === 'note') {
+      handleDeleteNote(id);
+    } else if (type === 'folder') {
+      handleDeleteFolder(id);
+    }
+    closeConfirmModal();
+  };
 
   const toggleFolderDropdown = (folderId) => {
     if (isFolderDropdownOpen && selectedFolderDropdown === folderId) {
@@ -94,14 +129,13 @@ const Sidebar = React.forwardRef((props, ref) => {
     }
   };
 
+  // Directly trigger the modal without any window.confirm()
   const confirmAndDeleteNote = (noteId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this note permanently?"
-    );
-    if (confirmDelete) {
-      handleDeleteNote(noteId);
-      setIsNoteDropdownOpen(false);
-    }
+    openConfirmModal('note', noteId);
+  };
+
+  const confirmAndDeleteFolder = (folderId, folderName) => {
+    openConfirmModal('folder', folderId, folderName);
   };
 
   return (
@@ -114,6 +148,30 @@ const Sidebar = React.forwardRef((props, ref) => {
         hasOverflow ? 'has-overflow' : ''
       }`}
     >
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={isConfirmModalOpen}
+        onRequestClose={closeConfirmModal}
+        contentLabel="Confirmation Modal"
+        className="confirmation-modal"
+        overlayClassName="confirmation-modal-overlay"
+      >
+        <h2>Confirm Deletion</h2>
+        <p>
+          {modalContent.type === 'note'
+            ? 'Are you sure you want to delete this note? This action cannot be undone.'
+            : `Are you sure you want to delete the folder "${modalContent.name}"? All notes within will also be permanently deleted. This action cannot be undone.`}
+        </p>
+        <div className="modal-buttons">
+          <button onClick={handleConfirm} className="confirm-button">
+            Yes, Delete
+          </button>
+          <button onClick={closeConfirmModal} className="cancel-button">
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
       <div className="sidebar-header">
         <h2>Collections</h2>
         <button
@@ -192,8 +250,7 @@ const Sidebar = React.forwardRef((props, ref) => {
                       </li>
                       <li
                         onClick={() => {
-                          handleDeleteFolder(folder.id);
-                          setIsFolderDropdownOpen(false);
+                          confirmAndDeleteFolder(folder.id, folder.name);
                         }}
                       >
                         <FaTrash className="dropdown-icon" /> Delete

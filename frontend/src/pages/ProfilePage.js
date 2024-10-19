@@ -1,12 +1,24 @@
+// src/pages/ProfilePage.js
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
-import { getAuth, updateProfile, updatePassword, signOut, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import {
+  getAuth,
+  updateProfile,
+  updatePassword,
+  signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 import './styling/ProfilePage.css';
 
+// Import the compressImage utility
+import { compressImage } from '../utils/imageCompression';
+
 const ProfilePage = () => {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -14,7 +26,7 @@ const ProfilePage = () => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState(''); // To store feedback messages
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -50,7 +62,7 @@ const ProfilePage = () => {
       }
 
       setFeedbackMessage('Profile updated successfully!');
-      setCurrentPassword(''); // Clear password after updating
+      setCurrentPassword('');
       setNewPassword('');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -71,16 +83,25 @@ const ProfilePage = () => {
     }
   };
 
-  // Handle Upload Profile Picture
+  // Handle Upload Profile Picture with Compression
   const handleUploadProfilePicture = async () => {
     if (!profilePicture) return;
 
     const storage = getStorage();
-    const storageRef = ref(storage, `profilePictures/${user.uid}`);
+    const storageRef = ref(
+      storage,
+      `profilePictures/${user.uid}/${Date.now()}_${profilePicture.name}`
+    );
+
     try {
-      await uploadBytes(storageRef, profilePicture);
+      // Compress the image before uploading
+      const compressedFile = await compressImage(profilePicture, 0.5, 1024); // 0.5MB max size, 1024px max dimension
+
+      await uploadBytes(storageRef, compressedFile);
       const downloadURL = await getDownloadURL(storageRef);
-      await updateProfile(user, { photoURL: downloadURL });
+
+      const auth = getAuth();
+      await updateProfile(auth.currentUser, { photoURL: downloadURL });
       setProfilePictureUrl(downloadURL);
     } catch (error) {
       console.error('Error uploading profile picture:', error);
@@ -94,6 +115,7 @@ const ProfilePage = () => {
       const auth = getAuth();
       await signOut(auth);
       console.log('User logged out successfully.');
+      navigate('/login'); // Navigate to login page after logout
     } catch (error) {
       console.error('Error logging out:', error);
       setFeedbackMessage('Error logging out. Please try again.');
@@ -122,7 +144,6 @@ const ProfilePage = () => {
 
       <h1 className="profile-title">My Profile</h1>
       <div className="profile-container">
-        
         {/* Feedback Section */}
         {feedbackMessage && <div className="feedback-message">{feedbackMessage}</div>}
 
@@ -135,28 +156,60 @@ const ProfilePage = () => {
               <div className="default-profile-picture">No Profile Picture</div>
             )}
           </div>
-          <input type="file" onChange={handleProfilePictureChange} accept="image/*" className="profile-picture-input" />
+          <input
+            type="file"
+            onChange={handleProfilePictureChange}
+            accept="image/*"
+            className="profile-picture-input"
+          />
         </div>
 
         {/* User Information Section */}
         <div className="user-info-section">
           <label className="input-label">Display Name</label>
-          <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="input-field" />
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="input-field"
+          />
 
           <label className="input-label">Email</label>
-          <input type="email" value={email} readOnly disabled className="input-field disabled" />
+          <input
+            type="email"
+            value={email}
+            readOnly
+            disabled
+            className="input-field disabled"
+          />
 
           <label className="input-label">Current Password</label>
-          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="input-field" placeholder="Enter current password" />
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="input-field"
+            placeholder="Enter current password"
+          />
 
           <label className="input-label">New Password</label>
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="input-field" placeholder="Enter new password" />
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="input-field"
+            placeholder="Enter new password"
+          />
         </div>
 
         {/* Action Buttons */}
         <div className="action-buttons">
-          <button className="save-button" onClick={handleUpdateProfile}>Update Profile</button>
-          <button className="logout-button" onClick={handleLogout}>Logout</button>
+          <button className="save-button" onClick={handleUpdateProfile}>
+            Update Profile
+          </button>
+          <button className="logout-button" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </div>
     </div>
