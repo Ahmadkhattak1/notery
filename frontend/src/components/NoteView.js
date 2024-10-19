@@ -57,7 +57,6 @@ const NoteView = ({ openNote }) => {
       <div className="noteview-container">
         <div className="welcome-section">
           <h2>Your Recent Notes</h2>
-          <p>Click on a note to start editing.</p>
         </div>
 
         {recentNotes.length > 0 ? (

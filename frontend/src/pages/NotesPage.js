@@ -230,7 +230,7 @@ const NotesPage = () => {
           setIsSaved(false);
           setHasUnsavedChanges(true);
         }
-      }, 5000); // 5-second delay
+      }, 1500); // 1.5-second delay
 
       editor.on('update', handleAutoSave);
 

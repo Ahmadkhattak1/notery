@@ -35,7 +35,7 @@ const Sidebar = React.forwardRef((props, ref) => {
     setSelectedNoteDropdown,
     isNoteDropdownOpen,
     setIsNoteDropdownOpen,
-    handleDeleteNote,
+    handleDeleteNote, // Updated to perform hard delete
     isCreatingNote,
     perFolderLoadingNotes,
     perFolderHasMoreNotes,
@@ -91,6 +91,16 @@ const Sidebar = React.forwardRef((props, ref) => {
     if (isFolderDropdownOpen) {
       setIsFolderDropdownOpen(false);
       setSelectedFolderDropdown(null);
+    }
+  };
+
+  const confirmAndDeleteNote = (noteId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this note permanently?"
+    );
+    if (confirmDelete) {
+      handleDeleteNote(noteId);
+      setIsNoteDropdownOpen(false);
     }
   };
 
@@ -254,8 +264,7 @@ const Sidebar = React.forwardRef((props, ref) => {
                                         </li>
                                         <li
                                           onClick={() => {
-                                            handleDeleteNote(note.id);
-                                            setIsNoteDropdownOpen(false);
+                                            confirmAndDeleteNote(note.id);
                                           }}
                                         >
                                           <FaTrash className="dropdown-icon" /> Delete
