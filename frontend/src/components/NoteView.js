@@ -1,5 +1,3 @@
-// src/components/NoteView.js
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -9,10 +7,13 @@ import './styling/NoteView.css';
 const NoteView = ({ openNote }) => {
   const { user } = useAuth();
   const [recentNotes, setRecentNotes] = useState([]);
+  const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
     const fetchRecentNotes = async () => {
       if (!user) return;
+
+      setLoading(true); // Start loading indicator
 
       try {
         const notesRef = collection(db, 'notes');
@@ -32,6 +33,8 @@ const NoteView = ({ openNote }) => {
         console.log('Fetched recent notes:', notes);
       } catch (error) {
         console.error('Error fetching recent notes:', error);
+      } finally {
+        setLoading(false); // Stop loading indicator
       }
     };
 
@@ -59,7 +62,15 @@ const NoteView = ({ openNote }) => {
           <h2>Your Recent Notes</h2>
         </div>
 
-        {recentNotes.length > 0 ? (
+        {loading ? ( // Show loading indicator when fetching
+          <div className="loading-indicator">
+            <div className="dot-spinner">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
+            </div>
+          </div>
+        ) : recentNotes.length > 0 ? ( // Show recent notes if found
           <div className="recent-notes-section">
             <div className="recent-notes-grid">
               {recentNotes.map((note) => (
