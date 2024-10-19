@@ -46,7 +46,7 @@ import Strike from '@tiptap/extension-strike';
 import Underline from '@tiptap/extension-underline';
 import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, signOut, updateProfile } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { useNavigate } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -483,10 +483,7 @@ const NotesPage = () => {
     if (!user) return;
 
     // Query only folders belonging to the authenticated user
-    const foldersQuery = query(
-      collection(db, 'folders'),
-      where('userId', '==', user.uid)
-    );
+    const foldersQuery = query(collection(db, 'folders'), where('userId', '==', user.uid));
 
     const unsubscribeFolders = onSnapshot(
       foldersQuery,
@@ -763,30 +760,57 @@ const NotesPage = () => {
     }
   };
 
+  // Function to delete all notes in a folder (with batching)
+  const deleteNotesInFolder = async (folderId) => {
+    const batchSize = 500;
+
+    const deleteQueryBatch = async () => {
+      const notesRef = collection(db, 'notes');
+      const notesQuery = query(notesRef, where('folderId', '==', folderId), limit(batchSize));
+      const querySnapshot = await getDocs(notesQuery);
+
+      if (querySnapshot.size === 0) {
+        // All notes have been deleted
+        return;
+      }
+
+      const batch = writeBatch(db);
+      querySnapshot.docs.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
+      });
+
+      await batch.commit();
+
+      console.log(`Deleted batch of ${querySnapshot.size} notes from folder ${folderId}`);
+
+      // Recurse if there are more notes to delete
+      if (querySnapshot.size === batchSize) {
+        // There might be more notes, call the function again
+        await deleteQueryBatch();
+      }
+    };
+
+    await deleteQueryBatch();
+  };
+
   const handleDeleteFolder = async (folderId) => {
     if (
       !window.confirm(
-        'Are you sure you want to delete this collection? All notes within will be moved to Unassigned.'
+        'Are you sure you want to delete this folder? All notes within will also be permanently deleted. This action cannot be undone.'
       )
     )
       return;
 
     try {
-      const notesRef = collection(db, 'notes');
-      const notesSnapshot = await getDocs(query(notesRef, where('folderId', '==', folderId)));
+      // Delete all notes within the folder
+      await deleteNotesInFolder(folderId);
+      console.log('All notes within the folder have been deleted.');
 
-      const batch = writeBatch(db);
-      notesSnapshot.forEach((docSnap) => {
-        const noteRef = doc(db, 'notes', docSnap.id);
-        batch.update(noteRef, { folderId: null });
-      });
-      await batch.commit();
-      console.log('All notes moved to Unassigned.');
-
+      // Delete the folder itself
       await deleteDoc(doc(db, 'folders', folderId));
       console.log('Folder deleted successfully:', folderId);
 
-      // Remove the folder's notes from the state
+      // Update state
       setNotesData((prevNotes) => {
         const updatedNotes = { ...prevNotes };
         delete updatedNotes[folderId];
@@ -805,6 +829,14 @@ const NotesPage = () => {
         delete updatedHasMore[folderId];
         return updatedHasMore;
       });
+
+      // Remove the folder from the folders state
+      setFolders((prevFolders) => prevFolders.filter((folder) => folder.id !== folderId));
+
+      // If the deleted folder was selected, reset selectedFolder
+      if (selectedFolder === folderId) {
+        setSelectedFolder('unassigned');
+      }
     } catch (error) {
       console.error('Error deleting folder:', error.message, error.code, error);
       alert('Failed to delete the folder. Please try again.');
@@ -821,10 +853,7 @@ const NotesPage = () => {
     }
 
     // If the item is dropped in the same place, do nothing
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
       return;
     }
 
@@ -859,10 +888,7 @@ const NotesPage = () => {
         if (movedNote) {
           movedNote.folderId = newFolderId || null;
           const targetFolderId = newFolderId || 'unassigned';
-          updatedNotes[targetFolderId] = [
-            movedNote,
-            ...(updatedNotes[targetFolderId] || []),
-          ];
+          updatedNotes[targetFolderId] = [movedNote, ...(updatedNotes[targetFolderId] || [])];
         }
 
         return updatedNotes;
@@ -873,7 +899,7 @@ const NotesPage = () => {
     }
   };
 
-  // Handle image uploads
+  // Handle image uploads in the editor
   const handleImageUpload = async (event) => {
     if (!isOnline) {
       alert('Image upload requires an internet connection.');
@@ -892,7 +918,10 @@ const NotesPage = () => {
       };
       const compressedFile = await imageCompression(file, options);
 
-      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${compressedFile.name}`);
+      const storageRef = ref(
+        storage,
+        `images/${user.uid}/${Date.now()}_${compressedFile.name}`
+      );
 
       await uploadBytes(storageRef, compressedFile);
 
@@ -911,6 +940,7 @@ const NotesPage = () => {
     }
   };
 
+  // Handle camera capture in the editor
   const handleCameraCapture = async (event) => {
     if (!isOnline) {
       alert('Image upload requires an internet connection.');
@@ -929,7 +959,10 @@ const NotesPage = () => {
       };
       const compressedFile = await imageCompression(file, options);
 
-      const storageRef = ref(storage, `images/${user.uid}/${Date.now()}_${compressedFile.name}`);
+      const storageRef = ref(
+        storage,
+        `images/${user.uid}/${Date.now()}_${compressedFile.name}`
+      );
 
       await uploadBytes(storageRef, compressedFile);
 
@@ -945,6 +978,52 @@ const NotesPage = () => {
     } catch (error) {
       console.error('Error uploading camera image:', error);
       alert('Failed to upload the image. Please try again.');
+    }
+  };
+
+  // Handle profile picture upload with compression
+  const handleProfilePictureUpload = async (event) => {
+    if (!isOnline) {
+      alert('Profile picture upload requires an internet connection.');
+      return;
+    }
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      // Compress the image before uploading
+      const options = {
+        maxSizeMB: 0.5, // 500KB max size
+        maxWidthOrHeight: 1024, // Adjust as needed
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(file, options);
+
+      const storageRef = ref(
+        storage,
+        `profilePictures/${user.uid}/${Date.now()}_${compressedFile.name}`
+      );
+
+      await uploadBytes(storageRef, compressedFile);
+
+      const url = await getDownloadURL(storageRef);
+
+      // Update user's profile picture URL in Firebase Authentication
+      await updateProfile(user, {
+        photoURL: url,
+      });
+
+      // Optionally update Firestore user document if you store additional user data there
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, {
+        photoURL: url,
+      });
+
+      console.log('Profile picture uploaded and updated:', url);
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Failed to upload the profile picture. Please try again.');
     }
   };
 
@@ -1028,6 +1107,7 @@ const NotesPage = () => {
           setIsProfileDropdownOpen={setIsProfileDropdownOpen}
           handleImageUpload={handleImageUpload}
           handleCameraCapture={handleCameraCapture}
+          handleProfilePictureUpload={handleProfilePictureUpload} // Pass the new function to Header
           handleAINotesClick={handleAINotesClick}
           setIsSidebarOpen={setIsSidebarOpen}
           activeNote={activeNote}
