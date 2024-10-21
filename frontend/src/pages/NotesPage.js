@@ -48,7 +48,7 @@ import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
 import { getAuth, signOut, updateProfile } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom'; // Import useParams and useNavigate
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ClipLoader } from 'react-spinners';
 import Header from '../components/Header';
@@ -77,6 +77,7 @@ const NotesPage = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const auth = getAuth();
   const navigate = useNavigate();
+  const { folderId, noteId } = useParams(); // Get folderId and noteId from URL
 
   const [isFolderDropdownOpen, setIsFolderDropdownOpen] = useState(false);
   const [selectedFolderDropdown, setSelectedFolderDropdown] = useState(null);
@@ -214,66 +215,7 @@ const NotesPage = () => {
     };
   }
 
-  // Handle editor updates with debounce to prevent rapid multiple saves
-  useEffect(() => {
-    if (editor) {
-      const updateTextColor = () => {
-        const color = editor.getAttributes('textStyle').color || '';
-        setTextColor(color);
-      };
-
-      editor.on('selectionUpdate', updateTextColor);
-      editor.on('transaction', updateTextColor);
-
-      // Debounced autosave to prevent multiple rapid saves
-      const handleAutoSave = debounce(() => {
-        if (activeNote) {
-          handleSaveNote();
-          setIsSaved(false);
-          setHasUnsavedChanges(true);
-        }
-      }, 1000); // 1-second delay
-
-      editor.on('update', handleAutoSave);
-
-      return () => {
-        editor.off('selectionUpdate', updateTextColor);
-        editor.off('transaction', updateTextColor);
-        editor.off('update', handleAutoSave);
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, activeNote]);
-
-  // State for Confirmation Modal
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState({
-    type: '', // 'closeNote', 'switchNote', 'deleteNote', 'deleteFolder'
-    action: null,
-    message: '',
-  });
-
-  // Function to open the confirmation modal
-  const openConfirmModal = (type, action, message) => {
-    setModalContent({ type, action, message });
-    setIsConfirmModalOpen(true);
-  };
-
-  // Function to close the confirmation modal
-  const closeConfirmModal = () => {
-    setIsConfirmModalOpen(false);
-    setModalContent({ type: '', action: null, message: '' });
-  };
-
-  // Handle confirmation action
-  const handleConfirm = () => {
-    if (modalContent.action) {
-      modalContent.action();
-    }
-    closeConfirmModal();
-  };
-
-  // Handle save note function (remains unchanged)
+  // Define handleSaveNote before it's used
   const handleSaveNote = async () => {
     if (!editor) {
       console.warn('Editor instance is not available.');
@@ -361,6 +303,107 @@ const NotesPage = () => {
     }
   };
 
+  // Handle editor updates with debounce to prevent rapid multiple saves
+  useEffect(() => {
+    if (editor) {
+      const updateTextColor = () => {
+        const color = editor.getAttributes('textStyle').color || '';
+        setTextColor(color);
+      };
+
+      editor.on('selectionUpdate', updateTextColor);
+      editor.on('transaction', updateTextColor);
+
+      // Debounced autosave to prevent multiple rapid saves
+      const handleAutoSave = debounce(() => {
+        if (activeNote) {
+          handleSaveNote();
+          setIsSaved(false);
+          setHasUnsavedChanges(true);
+        }
+      }, 1000); // 1-second delay
+
+      editor.on('update', handleAutoSave);
+
+      return () => {
+        editor.off('selectionUpdate', updateTextColor);
+        editor.off('transaction', updateTextColor);
+        editor.off('update', handleAutoSave);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, activeNote]);
+
+  // State for Confirmation Modal
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    type: '', // 'closeNote', 'switchNote', 'deleteNote', 'deleteFolder'
+    action: null,
+    message: '',
+  });
+
+  // Function to open the confirmation modal
+  const openConfirmModal = (type, action, message) => {
+    setModalContent({ type, action, message });
+    setIsConfirmModalOpen(true);
+  };
+
+  // Function to close the confirmation modal
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setModalContent({ type: '', action: null, message: '' });
+  };
+
+  // Handle confirmation action
+  const handleConfirm = () => {
+    if (modalContent.action) {
+      modalContent.action();
+    }
+    closeConfirmModal();
+  };
+
+  // **Define handleDeleteNote before it's used**
+  const handleDeleteNote = async (noteId) => {
+    console.log('handleDeleteNote called for note:', noteId);
+
+    if (isOnline) {
+      try {
+        await deleteDoc(doc(db, 'notes', noteId));
+        console.log('Note deleted successfully:', noteId);
+        setNotesData((prevNotes) => {
+          // Find the folder containing this note
+          const folderId = Object.keys(prevNotes).find((fid) =>
+            prevNotes[fid].some((note) => note.id === noteId)
+          );
+          if (folderId) {
+            const updatedNotes = prevNotes[folderId].filter((note) => note.id !== noteId);
+            return {
+              ...prevNotes,
+              [folderId]: updatedNotes,
+            };
+          }
+          return prevNotes;
+        });
+        if (activeNote && activeNote.id === noteId) {
+          setActiveNote(null);
+          if (editor) {
+            editor.commands.setContent('<h1></h1>');
+            console.log('Editor content reset after deletion.');
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting note:', error.message, error.code, error);
+        alert('Failed to delete the note. Please try again.');
+      }
+    } else {
+      setOfflineQueue((prevQueue) => [
+        ...prevQueue,
+        () => deleteDoc(doc(db, 'notes', noteId)),
+      ]);
+      alert('Delete action queued due to offline status.');
+    }
+  };
+
   // Function to close a note and handle empty note deletion
   const closeNote = async () => {
     if (hasUnsavedChanges) {
@@ -416,7 +459,7 @@ const NotesPage = () => {
     }
   };
 
-  // Open note function with modal confirmation
+  // Open note function with navigation to URL
   const openNote = async (note) => {
     if (hasUnsavedChanges) {
       openConfirmModal(
@@ -433,13 +476,47 @@ const NotesPage = () => {
     }
   };
 
+  // **Function to navigate to the note's URL**
   const proceedToOpenNote = async (note) => {
     try {
-      const noteRef = doc(db, 'notes', note.id);
+      // Navigate to the note's URL with folderId and noteId
+      navigate(`/notes/${note.folderId || 'unassigned'}/${note.id}`);
+    } catch (error) {
+      console.error('Error navigating to note:', error);
+    }
+  };
+
+  // **Fetch note data when URL parameters change**
+  useEffect(() => {
+    if (noteId) {
+      fetchNoteById(noteId, folderId);
+    } else {
+      // If no noteId, reset activeNote and editor content
+      setActiveNote(null);
+      if (editor) {
+        editor.commands.setContent('<h1></h1>');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteId, folderId]);
+
+  // **Function to fetch note by ID and verify folder association**
+  const fetchNoteById = async (noteId, folderId) => {
+    try {
+      const noteRef = doc(db, 'notes', noteId);
       const noteSnap = await getDoc(noteRef);
 
       if (noteSnap.exists()) {
         const noteData = noteSnap.data();
+
+        // Check if the note belongs to the specified folder
+        if ((noteData.folderId || 'unassigned') !== folderId) {
+          console.error("Folder ID does not match note's folder ID.");
+          alert('This note does not belong to the specified folder.');
+          navigate('/notes');
+          return;
+        }
+
         const fullNote = {
           id: noteSnap.id,
           title: noteData.title,
@@ -460,8 +537,9 @@ const NotesPage = () => {
         }
 
         setIsSaved(true);
+        setSelectedFolder(folderId); // Set the selectedFolder based on URL
       } else {
-        console.error('Note does not exist:', note.id);
+        console.error('Note does not exist:', noteId);
         alert('The selected note does not exist.');
         setActiveNote(null);
         if (editor) {
@@ -471,48 +549,6 @@ const NotesPage = () => {
     } catch (error) {
       console.error('Error fetching note:', error);
       alert('Failed to open the note. Please try again.');
-    }
-  };
-
-  // Delete note function without confirmation (handled by Sidebar.js)
-  const handleDeleteNote = async (noteId) => {
-    console.log('handleDeleteNote called for note:', noteId);
-
-    if (isOnline) {
-      try {
-        await deleteDoc(doc(db, 'notes', noteId));
-        console.log('Note deleted successfully:', noteId);
-        setNotesData((prevNotes) => {
-          // Find the folder containing this note
-          const folderId = Object.keys(prevNotes).find((fid) =>
-            prevNotes[fid].some((note) => note.id === noteId)
-          );
-          if (folderId) {
-            const updatedNotes = prevNotes[folderId].filter((note) => note.id !== noteId);
-            return {
-              ...prevNotes,
-              [folderId]: updatedNotes,
-            };
-          }
-          return prevNotes;
-        });
-        if (activeNote && activeNote.id === noteId) {
-          setActiveNote(null);
-          if (editor) {
-            editor.commands.setContent('<h1></h1>');
-            console.log('Editor content reset after deletion.');
-          }
-        }
-      } catch (error) {
-        console.error('Error deleting note:', error.message, error.code, error);
-        alert('Failed to delete the note. Please try again.');
-      }
-    } else {
-      setOfflineQueue((prevQueue) => [
-        ...prevQueue,
-        () => deleteDoc(doc(db, 'notes', noteId)),
-      ]);
-      alert('Delete action queued due to offline status.');
     }
   };
 
@@ -551,28 +587,35 @@ const NotesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Fetch notes when selectedFolder changes
+  // Fetch notes when selectedFolder changes or when folderId from URL changes
   useEffect(() => {
     if (!selectedFolder) return;
 
+    // Fetch notes for the selected folder
+    fetchNotesForFolder(selectedFolder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFolder, folders]);
+
+  // **Function to fetch notes for a folder**
+  const fetchNotesForFolder = async (folderId) => {
     // If notes for the selected folder are already fetched, do not fetch again
-    if (notesData[selectedFolder]) {
-      console.log(`Notes for folder ${selectedFolder} already fetched.`);
+    if (notesData[folderId]) {
+      console.log(`Notes for folder ${folderId} already fetched.`);
       return;
     }
 
     // Fetch notes for the selected folder
-    const fetchNotesForFolder = async () => {
-      console.log(`Fetching notes for folder: ${selectedFolder}`);
-      setPerFolderLoadingNotes((prev) => ({ ...prev, [selectedFolder]: true }));
+    const fetchNotesForFolderInternal = async () => {
+      console.log(`Fetching notes for folder: ${folderId}`);
+      setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: true }));
 
       try {
         let notesQuery;
-        if (selectedFolder !== 'unassigned') {
+        if (folderId !== 'unassigned') {
           notesQuery = query(
             collection(db, 'notes'),
             where('userId', '==', user.uid),
-            where('folderId', '==', selectedFolder),
+            where('folderId', '==', folderId),
             orderBy('createdAt', 'desc'),
             limit(initialLimit)
           );
@@ -599,32 +642,31 @@ const NotesPage = () => {
 
         setNotesData((prevNotes) => ({
           ...prevNotes,
-          [selectedFolder]: fetchedNotes,
+          [folderId]: fetchedNotes,
         }));
 
         if (snapshot.docs.length === initialLimit) {
-          setPerFolderHasMoreNotes((prev) => ({ ...prev, [selectedFolder]: true }));
+          setPerFolderHasMoreNotes((prev) => ({ ...prev, [folderId]: true }));
           setLastVisibleNote((prev) => ({
             ...prev,
-            [selectedFolder]: snapshot.docs[snapshot.docs.length - 1],
+            [folderId]: snapshot.docs[snapshot.docs.length - 1],
           }));
         } else {
-          setPerFolderHasMoreNotes((prev) => ({ ...prev, [selectedFolder]: false }));
-          setLastVisibleNote((prev) => ({ ...prev, [selectedFolder]: null }));
+          setPerFolderHasMoreNotes((prev) => ({ ...prev, [folderId]: false }));
+          setLastVisibleNote((prev) => ({ ...prev, [folderId]: null }));
         }
 
-        console.log(`Fetched ${fetchedNotes.length} notes for folder: ${selectedFolder}`);
+        console.log(`Fetched ${fetchedNotes.length} notes for folder: ${folderId}`);
       } catch (error) {
         console.error('Error fetching notes:', error);
         alert('Failed to fetch notes. Please try again.');
       } finally {
-        setPerFolderLoadingNotes((prev) => ({ ...prev, [selectedFolder]: false }));
+        setPerFolderLoadingNotes((prev) => ({ ...prev, [folderId]: false }));
       }
     };
 
-    fetchNotesForFolder();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolder]);
+    fetchNotesForFolderInternal();
+  };
 
   // Load more notes per folder
   const loadMoreNotes = async (folderId) => {
@@ -728,6 +770,9 @@ const NotesPage = () => {
       if (window.innerWidth <= 768) {
         setIsSidebarOpen(false);
       }
+
+      // Navigate to the new note's URL
+      navigate(`/notes/${folderId || 'unassigned'}/${docRef.id}`);
     } catch (error) {
       console.error('Error adding note:', error);
       alert('Failed to add the note. Please try again.');
@@ -868,6 +913,7 @@ const NotesPage = () => {
       // If the deleted folder was selected, reset selectedFolder
       if (selectedFolder === folderId) {
         setSelectedFolder('unassigned');
+        navigate('/notes/unassigned'); // Navigate to 'Unassigned' folder
       }
     } catch (error) {
       console.error('Error deleting folder:', error.message, error.code, error);
@@ -885,7 +931,10 @@ const NotesPage = () => {
     }
 
     // If the item is dropped in the same place, do nothing
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
       return;
     }
 
@@ -1150,12 +1199,13 @@ const NotesPage = () => {
           handleDeleteFolder={handleDeleteFolder} // Now handles deletion without confirmation
           handleAddNote={handleAddNoteAction}
           openAddFolderModal={openAddFolderModal}
-          openNote={openNote}
+          openNote={openNote} // Use the updated openNote function
           notes={notesData}
           activeNote={activeNote}
           selectedFolder={selectedFolder}
           setSelectedFolder={(folderId) => {
             setSelectedFolder(folderId);
+            navigate(`/notes/${folderId}`); // Navigate to the folder's URL
           }}
           isFolderDropdownOpen={isFolderDropdownOpen}
           setIsFolderDropdownOpen={setIsFolderDropdownOpen}
@@ -1220,7 +1270,10 @@ const NotesPage = () => {
               closeNote={closeNote}
             />
             {editor && (
-              <FloatingToolbar editor={editor} setHasUnsavedChanges={setHasUnsavedChanges} />
+              <FloatingToolbar
+                editor={editor}
+                setHasUnsavedChanges={setHasUnsavedChanges}
+              />
             )}
           </>
         ) : (
@@ -1229,6 +1282,7 @@ const NotesPage = () => {
       </div>
     </DragDropContext>
   );
+
 };
 
 export default NotesPage;

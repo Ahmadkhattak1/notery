@@ -1,5 +1,6 @@
 // src/components/Sidebar.js
 
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import React, { useEffect, useRef, useState } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { ClipLoader } from 'react-spinners';
@@ -19,13 +20,13 @@ Modal.setAppElement('#root');
 
 const Sidebar = React.forwardRef((props, ref) => {
   const {
-    folders,
+    folders = [], // Default to empty array
     handleEditFolder,
     handleDeleteFolder,
     handleAddNote,
     openAddFolderModal,
     openNote,
-    notes,
+    notes = {}, // Default to empty object
     activeNote,
     selectedFolder,
     setSelectedFolder,
@@ -39,7 +40,7 @@ const Sidebar = React.forwardRef((props, ref) => {
     setSelectedNoteDropdown,
     isNoteDropdownOpen,
     setIsNoteDropdownOpen,
-    handleDeleteNote, // Updated to perform hard delete
+    handleDeleteNote, // Now handles deletion without confirmation
     isCreatingNote,
     perFolderLoadingNotes,
     perFolderHasMoreNotes,
@@ -48,6 +49,9 @@ const Sidebar = React.forwardRef((props, ref) => {
 
   const sidebarRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
+
+  // Initialize navigate
+  const navigate = useNavigate();
 
   // State for Confirmation Modal
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -129,7 +133,6 @@ const Sidebar = React.forwardRef((props, ref) => {
     }
   };
 
-  // Directly trigger the modal without any window.confirm()
   const confirmAndDeleteNote = (noteId) => {
     openConfirmModal('note', noteId);
   };
@@ -197,7 +200,7 @@ const Sidebar = React.forwardRef((props, ref) => {
             <div
               className="folder-header"
               onClick={() =>
-                setSelectedFolder(selectedFolder === folder.id ? '' : folder.id)
+                setSelectedFolder(folder.id)
               }
             >
               <span className="folder-toggle">
@@ -282,12 +285,10 @@ const Sidebar = React.forwardRef((props, ref) => {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              onClick={() => openNote(note)}
+                              data-tooltip={note.title || 'Untitled Note'} // Tooltip content
+                              onClick={() => navigate(`/notes/${folder.id}/${note.id}`)}
                             >
-                              <span
-                                className="note-title"
-                                title={note.title || 'Untitled Note'}
-                              >
+                              <span className="note-title">
                                 {note.title || 'Untitled Note'}
                               </span>
 
@@ -313,7 +314,8 @@ const Sidebar = React.forwardRef((props, ref) => {
                                       <ul>
                                         <li
                                           onClick={() => {
-                                            openNote(note);
+                                            // Navigate to the note's URL
+                                            navigate(`/notes/${folder.id}/${note.id}`);
                                             setIsNoteDropdownOpen(false);
                                           }}
                                         >
@@ -341,6 +343,7 @@ const Sidebar = React.forwardRef((props, ref) => {
                           className="load-more-button"
                           onClick={() => loadMoreNotes(folder.id)}
                           disabled={perFolderLoadingNotes[folder.id]}
+                          title="Load more notes"
                         >
                           {perFolderLoadingNotes[folder.id] ? (
                             <>

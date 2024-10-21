@@ -1,0 +1,124 @@
+/* src/pages/styling/NotFoundPage.css */
+
+/* Main Container */
+.not-found-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 40px 20px;
+    background-color: #ffffff; /* White background */
+    font-family: 'Poppins', sans-serif;
+    color: #333333; /* Dark text for readability */
+  }
+  
+  /* Image Container */
+  .image-container {
+    width: 250px;
+    height: 250px;
+    margin-bottom: 30px;
+    position: relative;
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  /* Notebook Man Image */
+  .notebook-man {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    border-radius: 20px;
+  }
+  
+  /* Hover Effects */
+  .notebook-man:hover {
+    transform: scale(1.05);
+    box-shadow: 0 20px 40px rgba(33, 147, 176, 0.3); /* #2193b0 */
+  }
+  
+  /* Floating Animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+  
+  /* Error Title */
+  .error-title {
+    font-size: 6rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2193b0; /* Primary Blue */
+  }
+  
+  /* Error Subtitle */
+  .error-subtitle {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 10px 0 20px 0;
+    color: #555555; /* Dark Gray */
+  }
+  
+  /* Error Message */
+  .error-message {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    max-width: 500px;
+    color: #555555; /* Dark Gray */
+  }
+  
+  /* Call-to-Action Button */
+  .cta-button {
+    background-color: #2193b0; /* Primary Blue */
+    color: #ffffff; /* White Text */
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 10px 20px rgba(33, 147, 176, 0.4); /* #2193b0 */
+  }
+  
+  .cta-button:hover {
+    background-color: #6dd5ed; /* Light Blue */
+    transform: translateY(-5px);
+    box-shadow: 0 15px 25px rgba(33, 147, 176, 0.5); /* #2193b0 */
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .image-container {
+      width: 200px;
+      height: 200px;
+      margin-bottom: 20px;
+    }
+  
+    .error-title {
+      font-size: 4rem;
+    }
+  
+    .error-subtitle {
+      font-size: 1.5rem;
+    }
+  
+    .error-message {
+      font-size: 1rem;
+      margin-bottom: 30px;
+      padding: 0 10px;
+    }
+  
+    .cta-button {
+      padding: 12px 25px;
+      font-size: 0.9rem;
+    }
+  }
+  
