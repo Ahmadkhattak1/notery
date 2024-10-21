@@ -754,14 +754,7 @@ body {
     padding: 10px; /* Reduced padding */
 }
 
-/* Confirmation Modal Styling */
-.confirmation-modal {
-    /* Existing styles... */
-}
 
-.confirmation-modal-overlay {
-    /* Existing styles... */
-}
 
 /* Additional Styling for Recent Notes Presentation */
 .recent-notes-section {
@@ -811,17 +804,6 @@ body {
     overflow-x: hidden;
 }
 
-/* Adjust the alignment and spacing of main content and sidebar */
-.notes-container > * {
-    margin-top: 0; /* Remove top margins from direct children if any */
-}
-
-/* Ensure the Sidebar and Header are properly aligned */
-.sidebar {
-    /* Assuming Sidebar.css handles sidebar styles, but if needed: */
-    /* Adjust margins and paddings to remove gaps */
-    margin-top: 0; /* Remove top margin */
-}
 
 /* Footer or other components (if any) */
 .footer {
@@ -829,7 +811,6 @@ body {
     margin-top: 0;
 }
 
-/* Additional Media Queries Adjustments */
 
 /* Mobile Styles */
 @media (max-width: 768px) {
@@ -871,4 +852,81 @@ body {
     .note-card {
         padding: 12px; /* Adjust padding */
     }
+}
+
+
+.ai-notes-button {
+    background-color: #FF5722; /* Vibrant Orange */
+    color: #FFFFFF;
+    border: none; /* Remove default border for a cleaner look */
+    padding: 10px 20px; /* Increased padding for better click area */
+    border-radius: 25px; /* Rounded corners for a pill-shaped button */
+    cursor: pointer;
+    font-size: 14px; /* Slightly larger font for readability */
+    font-weight: 600; /* Bold text to stand out */
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Space between icon and text */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    position: relative;
+    overflow: hidden;
+    animation: pulse 3s infinite; /* Continuous pulsing animation */
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 87, 34, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(255, 87, 34, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 87, 34, 0);
+    }
+}
+
+/* Style for the AI Notes Button */
+.ai-notes-button {
+    background-color: #FF5722; /* Vibrant color */
+    padding: 10px 16px; /* Padding around the button */
+    border-radius: 25px; /* Rounded corners for a modern look */
+    border: none; /* No border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+}
+
+.ai-notes-button:hover {
+    background-color: #E64A19; /* Darker shade on hover */
+    transform: translateY(-2px); /* Slight upward movement on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+}
+
+.ai-notes-button:active {
+    background-color: #D84315; /* Even darker on click */
+    transform: translateY(0); /* Reset on click */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* AI Notes Icon Image */
+.ai-notes-icon {
+    width: 20px; /* Adjust size as needed */
+    height: 20px; /* Adjust size as needed */
+    transition: transform 0.3s ease;
+}
+
+/* AI Notes Text */
+.ai-notes-text {
+    font-size: 14px;
+    color: #FFFFFF;
+    font-weight: 600;
 }

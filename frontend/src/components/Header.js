@@ -4,6 +4,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
 
+// Import the PNG image for AI Notes
+import AiNotesIcon from '../assets/ai-notes-icon.png';
+
 const Header = ({
   user,
   isProfileDropdownOpen,
@@ -41,7 +44,7 @@ const Header = ({
           {/* Upload Image and AI Notes Buttons */}
           <div className="upload-image-container">
             <label htmlFor="imageUploadHeader" className="header-button">
-              📷 Upload/Take Photo
+              📷 Insert Photo
             </label>
             <input
               type="file"
@@ -64,7 +67,8 @@ const Header = ({
             onClick={handleAINotesClick}
             title="AI Notes"
           >
-            📝 AI Notes
+            <img src={AiNotesIcon} alt="AI Notes" className="ai-notes-icon" />
+            <span className="ai-notes-text">AI Notes</span>
           </button>
         </div>
       )}
