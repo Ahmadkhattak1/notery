@@ -796,6 +796,7 @@ body {
 .welcome-section h2 {
     font-size: 22px; /* Reduced font size */
     margin-bottom: 8px; /* Reduced bottom margin */
+    margin-top: -20px;
     color: #2d3748;
 }
 
@@ -843,6 +844,7 @@ body {
 
     .welcome-section h2 {
         font-size: 20px; /* Further reduced font size */
+        margin-top: 10px;
         margin-bottom: 6px; /* Further reduced bottom margin */
     }
 
