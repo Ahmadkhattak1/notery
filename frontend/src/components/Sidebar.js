@@ -1,9 +1,8 @@
 // src/components/Sidebar.js
 
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
-import { ClipLoader } from 'react-spinners';
 import './styling/Sidebar.css';
 import {
   FaChevronDown,
@@ -12,21 +11,25 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
+  FaSearch,
+  FaInfoCircle,
+  FaClock, // Import FaClock for Recent Notes
 } from 'react-icons/fa';
-import Modal from 'react-modal'; // Import react-modal
+import Modal from 'react-modal';
+import debounce from 'lodash.debounce';
 
 // Set the app element for accessibility
 Modal.setAppElement('#root');
 
 const Sidebar = React.forwardRef((props, ref) => {
   const {
-    folders = [], // Default to empty array
+    folders = [],
     handleEditFolder,
     handleDeleteFolder,
     handleAddNote,
     openAddFolderModal,
     openNote,
-    notes = {}, // Default to empty object
+    notes = {},
     activeNote,
     selectedFolder,
     setSelectedFolder,
@@ -40,7 +43,7 @@ const Sidebar = React.forwardRef((props, ref) => {
     setSelectedNoteDropdown,
     isNoteDropdownOpen,
     setIsNoteDropdownOpen,
-    handleDeleteNote, // Now handles deletion without confirmation
+    handleDeleteNote,
     isCreatingNote,
     perFolderLoadingNotes,
     perFolderHasMoreNotes,
@@ -50,7 +53,6 @@ const Sidebar = React.forwardRef((props, ref) => {
   const sidebarRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
 
-  // Initialize navigate
   const navigate = useNavigate();
 
   // State for Confirmation Modal
@@ -60,6 +62,10 @@ const Sidebar = React.forwardRef((props, ref) => {
     id: '',
     name: '',
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredNotes, setFilteredNotes] = useState({});
+  const [isSearching, setIsSearching] = useState(false);
 
   const checkOverflow = () => {
     const sidebar = sidebarRef.current;
@@ -141,6 +147,64 @@ const Sidebar = React.forwardRef((props, ref) => {
     openConfirmModal('folder', folderId, folderName);
   };
 
+  // Debounced search handler
+  const debouncedSearch = useCallback(
+    debounce((query) => {
+      performSearch(query);
+    }, 500),
+    [notes]
+  );
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredNotes({});
+      setIsSearching(false);
+    } else {
+      setIsSearching(true);
+      debouncedSearch(searchQuery);
+    }
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [searchQuery, debouncedSearch]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const performSearch = (query) => {
+    console.log('Performing search for query:', query);
+    let results = {};
+
+    // Priority search on titles
+    Object.keys(notes).forEach((folderId) => {
+      notes[folderId].forEach((note) => {
+        if (note.title && note.title.toLowerCase().includes(query.toLowerCase())) {
+          if (!results[folderId]) results[folderId] = [];
+          results[folderId].push(note);
+        }
+      });
+    });
+
+    // If no results from title, search in content
+    if (Object.keys(results).length === 0) {
+      console.log('No title matches found, performing full-text search');
+      Object.keys(notes).forEach((folderId) => {
+        notes[folderId].forEach((note) => {
+          if (
+            note.content &&
+            note.content.toLowerCase().includes(query.toLowerCase())
+          ) {
+            if (!results[folderId]) results[folderId] = [];
+            results[folderId].push(note);
+          }
+        });
+      });
+    }
+
+    setFilteredNotes(results);
+  };
+
   return (
     <div
       ref={(node) => {
@@ -186,6 +250,47 @@ const Sidebar = React.forwardRef((props, ref) => {
         </button>
       </div>
 
+      {/* Search Input */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search notes..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className="search-input"
+          aria-label="Search Notes"
+        />
+        <FaSearch className="search-icon" />
+        {/* Conditionally render info icon with CSS tooltip */}
+        {isSearching && (
+          <div className="search-info">
+            <span
+              className="info-icon"
+              data-tooltip="Search is limited to note titles using prefix matching and full-text search on loaded notes only."
+            >
+              <FaInfoCircle />
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Conditionally render helper text */}
+      {isSearching && (
+        <p className="search-helper-text">
+          Search is limited to note titles with prefix matching and full-text search on loaded notes only.
+        </p>
+      )}
+
+      {/* Recent Notes Button */}
+      <button
+        className="recent-notes-button"
+        onClick={() => navigate('/notes')}
+        title="Recent Notes"
+      >
+        <FaClock className="recent-notes-icon" /> Recent Notes
+      </button>
+
+      {/* Add Collection Button */}
       <button
         className="add-folder-button"
         onClick={openAddFolderModal}
@@ -194,86 +299,97 @@ const Sidebar = React.forwardRef((props, ref) => {
         <FaPlus className="add-icon" /> Add Collection
       </button>
 
+      {/* Divider */}
+      <div className="sidebar-divider"></div>
+
       <ul className="folders-list">
-        {folders.map((folder) => (
-          <li key={folder.id} className="folder-item">
-            <div
-              className="folder-header"
-              onClick={() =>
-                setSelectedFolder(folder.id)
-              }
-            >
-              <span className="folder-toggle">
-                {selectedFolder === folder.id ? <FaChevronDown /> : <FaChevronUp />}
-              </span>
+        {folders.map((folder) => {
+          // Use filteredNotes if searching
+          const folderNotes = isSearching
+            ? filteredNotes[folder.id] || []
+            : notes[folder.id] || [];
 
-              <span className="folder-name" title={folder.name}>
-                {folder.name}
-              </span>
+          // Skip folders with no matching notes during search
+          if (isSearching && folderNotes.length === 0) {
+            return null;
+          }
 
-              <button
-                className="add-note-icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddNote(folder.id);
-                  setSelectedFolder(folder.id);
-                }}
-                title="Add Note"
-                disabled={isCreatingNote}
+          return (
+            <li key={folder.id} className="folder-item">
+              <div
+                className="folder-header"
+                onClick={() => setSelectedFolder(folder.id)}
               >
-                <FaPlus />
-              </button>
+                <span className="folder-toggle">
+                  {selectedFolder === folder.id ? <FaChevronDown /> : <FaChevronUp />}
+                </span>
 
-              <div className="dropdown-wrapper">
+                <span className="folder-name" title={folder.name}>
+                  {folder.name}
+                </span>
+
                 <button
-                  className="folder-dots"
+                  className="add-note-icon"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleFolderDropdown(folder.id);
+                    handleAddNote(folder.id);
+                    setSelectedFolder(folder.id);
                   }}
-                  aria-label="Folder Options"
-                  aria-haspopup="true"
-                  aria-expanded={
-                    isFolderDropdownOpen && selectedFolderDropdown === folder.id
-                  }
+                  title="Add Note"
+                  disabled={isCreatingNote}
                 >
-                  <FaEllipsisV />
+                  <FaPlus />
                 </button>
 
-                {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
-                  <div className="folder-dropdown-container show-dropdown">
-                    <ul>
-                      <li
-                        onClick={() => {
-                          handleEditFolder(folder);
-                          setIsFolderDropdownOpen(false);
-                        }}
-                      >
-                        <FaEdit className="dropdown-icon" /> Edit
-                      </li>
-                      <li
-                        onClick={() => {
-                          confirmAndDeleteFolder(folder.id, folder.name);
-                        }}
-                      >
-                        <FaTrash className="dropdown-icon" /> Delete
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {selectedFolder === folder.id && (
-              <Droppable droppableId={folder.id}>
-                {(provided) => (
-                  <ul
-                    className="notes-list"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
+                <div className="dropdown-wrapper">
+                  <button
+                    className="folder-dots"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFolderDropdown(folder.id);
+                    }}
+                    aria-label="Folder Options"
+                    aria-haspopup="true"
+                    aria-expanded={
+                      isFolderDropdownOpen && selectedFolderDropdown === folder.id
+                    }
                   >
-                    {notes[folder.id] &&
-                      notes[folder.id].map((note, index) => (
+                    <FaEllipsisV />
+                  </button>
+
+                  {isFolderDropdownOpen && selectedFolderDropdown === folder.id && (
+                    <div className="folder-dropdown-container show-dropdown">
+                      <ul>
+                        <li
+                          onClick={() => {
+                            handleEditFolder(folder);
+                            setIsFolderDropdownOpen(false);
+                          }}
+                        >
+                          <FaEdit className="dropdown-icon" /> Edit
+                        </li>
+                        <li
+                          onClick={() => {
+                            confirmAndDeleteFolder(folder.id, folder.name);
+                          }}
+                        >
+                          <FaTrash className="dropdown-icon" /> Delete
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedFolder === folder.id && (
+                <Droppable droppableId={folder.id}>
+                  {(provided) => (
+                    <ul
+                      className="notes-list"
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                    >
+                      {folderNotes.map((note, index) => (
                         <Draggable key={note.id} draggableId={note.id} index={index}>
                           {(provided) => (
                             <li
@@ -285,10 +401,12 @@ const Sidebar = React.forwardRef((props, ref) => {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              data-tooltip={note.title || 'Untitled Note'} // Tooltip content
                               onClick={() => navigate(`/notes/${folder.id}/${note.id}`)}
                             >
-                              <span className="note-title">
+                              <span
+                                className="note-title"
+                                title={note.title || 'Untitled Note'}
+                              >
                                 {note.title || 'Untitled Note'}
                               </span>
 
@@ -308,77 +426,47 @@ const Sidebar = React.forwardRef((props, ref) => {
                                   <FaEllipsisV />
                                 </button>
 
-                                {isNoteDropdownOpen &&
-                                  selectedNoteDropdown === note.id && (
-                                    <div className="note-dropdown-container show-dropdown">
-                                      <ul>
-                                        <li
-                                          onClick={() => {
-                                            // Navigate to the note's URL
-                                            navigate(`/notes/${folder.id}/${note.id}`);
-                                            setIsNoteDropdownOpen(false);
-                                          }}
-                                        >
-                                          <FaEdit className="dropdown-icon" /> Edit
-                                        </li>
-                                        <li
-                                          onClick={() => {
-                                            confirmAndDeleteNote(note.id);
-                                          }}
-                                        >
-                                          <FaTrash className="dropdown-icon" /> Delete
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  )}
+                                {isNoteDropdownOpen && selectedNoteDropdown === note.id && (
+                                  <div className="note-dropdown-container show-dropdown">
+                                    <ul>
+                                      <li
+                                        onClick={() => {
+                                          // Navigate to the note's URL
+                                          navigate(`/notes/${folder.id}/${note.id}`);
+                                          setIsNoteDropdownOpen(false);
+                                        }}
+                                      >
+                                        <FaEdit className="dropdown-icon" /> Edit
+                                      </li>
+                                      <li
+                                        onClick={() => {
+                                          confirmAndDeleteNote(note.id);
+                                        }}
+                                      >
+                                        <FaTrash className="dropdown-icon" /> Delete
+                                      </li>
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </li>
                           )}
                         </Draggable>
                       ))}
 
-                    {perFolderHasMoreNotes[folder.id] && (
-                      <li className="load-more-container">
-                        <button
-                          className="load-more-button"
-                          onClick={() => loadMoreNotes(folder.id)}
-                          disabled={perFolderLoadingNotes[folder.id]}
-                          title="Load more notes"
-                        >
-                          {perFolderLoadingNotes[folder.id] ? (
-                            <>
-                              <ClipLoader
-                                color="#ffffff"
-                                loading={perFolderLoadingNotes[folder.id]}
-                                size={15}
-                              />{' '}
-                              Loading...
-                            </>
-                          ) : (
-                            'Load More'
-                          )}
-                        </button>
-                      </li>
-                    )}
+                      {provided.placeholder}
+                    </ul>
+                  )}
+                </Droppable>
+              )}
+            </li>
+          );
+        })}
 
-                    {perFolderLoadingNotes[folder.id] && (
-                      <li className="notes-loading-indicator">
-                        <ClipLoader
-                          color="#123abc"
-                          loading={perFolderLoadingNotes[folder.id]}
-                          size={30}
-                        />
-                        <p>Loading more notes...</p>
-                      </li>
-                    )}
-
-                    {provided.placeholder}
-                  </ul>
-                )}
-              </Droppable>
-            )}
-          </li>
-        ))}
+        {/* Show message if no notes are found during search */}
+        {isSearching && Object.keys(filteredNotes).length === 0 && (
+          <li className="no-notes-found">No notes found.</li>
+        )}
       </ul>
     </div>
   );
