@@ -19,6 +19,7 @@ import {
   orderBy,
   limit,
   startAfter,
+  setDoc,
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthProvider';
 import { useEditor } from '@tiptap/react';
@@ -27,11 +28,11 @@ import Bold from '@tiptap/extension-bold';
 import Italic from '@tiptap/extension-italic';
 import Highlight from '@tiptap/extension-highlight';
 import BulletList from '@tiptap/extension-bullet-list';
-import CodeBlock from '@tiptap/extension-code-block';
 import TextAlign from '@tiptap/extension-text-align';
 import Color from '@tiptap/extension-color';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import ResizableImage from '../extensions/ResizableImage';
+import Placeholder from '@tiptap/extension-placeholder';
 import './styling/NotesPage.css';
 import NoteEditor from '../components/NoteEditor.js';
 import Sidebar from '../components/Sidebar.js';
@@ -44,11 +45,10 @@ import Blockquote from '@tiptap/extension-blockquote';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Strike from '@tiptap/extension-strike';
 import Underline from '@tiptap/extension-underline';
-import Code from '@tiptap/extension-code';
 import TextStyle from '@tiptap/extension-text-style';
 import { getAuth, signOut, updateProfile } from 'firebase/auth';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { useNavigate, useParams } from 'react-router-dom'; // Import useParams and useNavigate
+import { useNavigate, useParams } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ClipLoader } from 'react-spinners';
 import Header from '../components/Header';
@@ -58,9 +58,13 @@ import FolderModal from '../components/FolderModal';
 import NoteView from '../components/NoteView';
 import PasteHandler from '../extensions/PasteHandler';
 import useOnlineStatus from '../hooks/useOnlineStatus';
+import Breadcrumbs from '../components/Breadcrumbs.js';
 
 // Import the compressImage utility
 import { compressImage } from '../utils/imageCompression';
+
+// Import the CustomCodeBlock extension
+import CustomCodeBlock from '../extensions/CustomCodeBlock';
 
 Modal.setAppElement('#root'); // Important for accessibility
 
@@ -113,15 +117,17 @@ const NotesPage = () => {
   const initialLimit = 10;
   const loadMoreLimit = 10;
 
-  // Editor setup with PasteHandler integration
+  // Editor setup with PasteHandler and Placeholder integration
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2],
         },
-        codeBlock: false, // Disable default code block
+        codeBlock: false, // Disable default code block to use custom configuration
       }),
+      // Use the imported CustomCodeBlock extension
+      CustomCodeBlock,
       Gapcursor,
       Bold,
       Italic,
@@ -130,14 +136,9 @@ const NotesPage = () => {
       BulletList,
       OrderedList,
       ListItem,
-      CodeBlock.configure({
-        HTMLAttributes: {
-          class: 'code-block',
-        },
-      }),
       ResizableImage,
       TextAlign.configure({
-        types: ['heading', 'paragraph', 'codeBlock', 'blockquote'],
+        types: ['heading', 'paragraph', 'customCodeBlock', 'blockquote'],
       }),
       Color,
       TextStyle,
@@ -146,12 +147,26 @@ const NotesPage = () => {
       }),
       Blockquote,
       HorizontalRule,
-      Code,
       CustomHeading,
       CustomParagraph,
-      PasteHandler, // Add PasteHandler extension
+      PasteHandler, // Ensure this extension doesn't interfere
+      // Add Placeholder extension
+      Placeholder.configure({
+        placeholder: ({ node, editor }) => {
+          // Show placeholder on empty paragraphs, headings, and custom code blocks
+          if (
+            node.type.name === 'paragraph' ||
+            node.type.name === 'heading' ||
+            node.type.name === 'customCodeBlock'
+          ) {
+            return 'Start typing here...';
+          }
+          return '';
+        },
+        showOnlyWhenEditable: true,
+      }),
     ],
-    content: '<h1></h1>',
+      content: '<h1></h1>',
     editorProps: {
       attributes: {
         class: 'editor-content',
@@ -521,7 +536,7 @@ const NotesPage = () => {
           id: noteSnap.id,
           title: noteData.title,
           content: noteData.content,
-          folderId: noteData.folderId || null,
+          folderId: noteData.folderId || 'unassigned',
           userId: noteData.userId,
           createdAt: noteData.createdAt ? noteData.createdAt.toDate() : new Date(),
           updatedAt: noteData.updatedAt ? noteData.updatedAt.toDate() : null,
@@ -537,7 +552,7 @@ const NotesPage = () => {
         }
 
         setIsSaved(true);
-        setSelectedFolder(folderId); // Set the selectedFolder based on URL
+        setSelectedFolder(fullNote.folderId); // Set the selectedFolder based on URL
       } else {
         console.error('Note does not exist:', noteId);
         alert('The selected note does not exist.');
@@ -556,34 +571,50 @@ const NotesPage = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Query only folders belonging to the authenticated user
-    const foldersQuery = query(collection(db, 'folders'), where('userId', '==', user.uid));
+    const fetchAndEnsureUnassignedFolder = async () => {
+      try {
+        // Query folders belonging to the authenticated user
+        const foldersQuery = query(collection(db, 'folders'), where('userId', '==', user.uid));
 
-    const unsubscribeFolders = onSnapshot(
-      foldersQuery,
-      (snapshot) => {
-        const foldersData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setFolders(foldersData);
-        console.log('Folders fetched:', foldersData.length);
+        const unsubscribeFolders = onSnapshot(
+          foldersQuery,
+          async (snapshot) => {
+            let foldersData = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
 
-        // Ensure 'Unassigned' folder is always present
-        if (!foldersData.some((folder) => folder.id === 'unassigned')) {
-          console.warn("'Unassigned' folder is missing.");
-        }
-      },
-      (error) => {
-        console.error('Error fetching folders:', error);
-        alert('Failed to fetch folders. Please try again.');
+            setFolders(foldersData);
+            console.log('Folders fetched:', foldersData.length);
+
+            // Ensure 'Unassigned' folder is always present
+            if (!foldersData.some((folder) => folder.id === 'unassigned')) {
+              console.warn("'Unassigned' folder is missing. Creating it.");
+              await setDoc(doc(db, 'folders', 'unassigned'), {
+                name: 'Unassigned',
+                userId: user.uid,
+                createdAt: serverTimestamp(),
+              });
+              console.log("'Unassigned' folder created.");
+            }
+          },
+          (error) => {
+            console.error('Error fetching folders:', error);
+            alert('Failed to fetch folders. Please try again.');
+          }
+        );
+
+        // Cleanup on unmount
+        return () => {
+          unsubscribeFolders();
+        };
+      } catch (error) {
+        console.error('Error ensuring Unassigned folder:', error);
+        alert('Failed to ensure the Unassigned folder exists.');
       }
-    );
-
-    // Cleanup on unmount
-    return () => {
-      unsubscribeFolders();
     };
+
+    fetchAndEnsureUnassignedFolder();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -624,7 +655,7 @@ const NotesPage = () => {
           notesQuery = query(
             collection(db, 'notes'),
             where('userId', '==', user.uid),
-            where('folderId', '==', null),
+            where('folderId', '==', 'unassigned'),
             orderBy('createdAt', 'desc'),
             limit(initialLimit)
           );
@@ -634,7 +665,7 @@ const NotesPage = () => {
         const fetchedNotes = snapshot.docs.map((doc) => ({
           id: doc.id,
           title: doc.data().title,
-          folderId: doc.data().folderId || null,
+          folderId: doc.data().folderId || 'unassigned',
           userId: doc.data().userId,
           createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date(),
           updatedAt: doc.data().updatedAt ? doc.data().updatedAt.toDate() : null,
@@ -691,7 +722,7 @@ const NotesPage = () => {
         moreNotesQuery = query(
           collection(db, 'notes'),
           where('userId', '==', user.uid),
-          where('folderId', '==', null),
+          where('folderId', '==', 'unassigned'),
           orderBy('createdAt', 'desc'),
           startAfter(lastVisibleNote[folderId]),
           limit(loadMoreLimit)
@@ -702,7 +733,7 @@ const NotesPage = () => {
       const newNotes = snapshot.docs.map((doc) => ({
         id: doc.id,
         title: doc.data().title,
-        folderId: doc.data().folderId || null,
+        folderId: doc.data().folderId || 'unassigned',
         userId: doc.data().userId,
         createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date(),
         updatedAt: doc.data().updatedAt ? doc.data().updatedAt.toDate() : null,
@@ -743,7 +774,7 @@ const NotesPage = () => {
       const docRef = await addDoc(collection(db, 'notes'), {
         title: 'Untitled Note',
         content: '<h1></h1>',
-        folderId: folderId || null,
+        folderId: folderId || 'unassigned',
         userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(), // Set updatedAt to serverTimestamp()
@@ -752,10 +783,10 @@ const NotesPage = () => {
       const newNote = {
         id: docRef.id,
         title: 'Untitled Note',
-        folderId: folderId || null,
+        folderId: folderId || 'unassigned',
         userId: user.uid,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date(), // This will be updated when Firestore syncs
+        updatedAt: new Date(), // This will be updated when Firestore syncs
       };
 
       setNotesData((prevNotes) => ({
@@ -827,6 +858,12 @@ const NotesPage = () => {
       return;
     }
 
+    // Prevent renaming the 'Unassigned' folder
+    if (editingFolder.id === 'unassigned') {
+      alert("Cannot rename the 'Unassigned' folder.");
+      return;
+    }
+
     try {
       const folderRef = doc(db, 'folders', editingFolder.id);
       await updateDoc(folderRef, {
@@ -876,8 +913,13 @@ const NotesPage = () => {
     await deleteQueryBatch();
   };
 
-  // Delete folder function without confirmation (handled by Sidebar.js)
+  // Delete folder function with protection for 'Unassigned' folder
   const handleDeleteFolder = async (folderId) => {
+    if (folderId === 'unassigned') {
+      alert("Cannot delete the 'Unassigned' folder.");
+      return;
+    }
+
     try {
       // Delete all notes within the folder
       await deleteNotesInFolder(folderId);
@@ -946,28 +988,29 @@ const NotesPage = () => {
   const handleMoveNote = async (noteId, newFolderId) => {
     try {
       const noteRef = doc(db, 'notes', noteId);
-      await updateDoc(noteRef, { folderId: newFolderId || null });
+      await updateDoc(noteRef, { folderId: newFolderId || 'unassigned' });
       console.log(`Note ${noteId} moved to folder ${newFolderId || 'Unassigned'}`);
 
-      // Update local state
-      let movedNote;
+      // Find the current folder and the note
+      let sourceFolderId = null;
+      let movedNote = null;
+
       setNotesData((prevNotes) => {
         const updatedNotes = { ...prevNotes };
-        let sourceFolderId = null;
 
         // Find and remove the note from its current folder
         for (const fid in updatedNotes) {
           const index = updatedNotes[fid].findIndex((note) => note.id === noteId);
           if (index !== -1) {
-            [movedNote] = updatedNotes[fid].splice(index, 1);
+            movedNote = { ...updatedNotes[fid][index], folderId: newFolderId || 'unassigned' };
+            updatedNotes[fid].splice(index, 1);
             sourceFolderId = fid;
             break;
           }
         }
 
-        // Add the note to the new folder at the top
         if (movedNote) {
-          movedNote.folderId = newFolderId || null;
+          // Add the note to the new folder at the top
           const targetFolderId = newFolderId || 'unassigned';
           updatedNotes[targetFolderId] = [movedNote, ...(updatedNotes[targetFolderId] || [])];
         }
@@ -1196,7 +1239,7 @@ const NotesPage = () => {
           ref={sidebarRef}
           folders={folders}
           handleEditFolder={handleEditFolder}
-          handleDeleteFolder={handleDeleteFolder} // Now handles deletion without confirmation
+          handleDeleteFolder={handleDeleteFolder} // Now handles deletion with protection
           handleAddNote={handleAddNoteAction}
           openAddFolderModal={openAddFolderModal}
           openNote={openNote} // Use the updated openNote function
@@ -1223,6 +1266,8 @@ const NotesPage = () => {
           perFolderHasMoreNotes={perFolderHasMoreNotes}
           loadMoreNotes={loadMoreNotes}
         />
+
+        <Breadcrumbs />
 
         {/* Modal for Adding/Editing Folders */}
         <FolderModal
@@ -1277,12 +1322,15 @@ const NotesPage = () => {
             )}
           </>
         ) : (
-          <NoteView openNote={openNote} handleAddNoteAction={handleAddNoteAction} />
+          <NoteView
+            openNote={openNote}
+            handleAddNoteAction={handleAddNoteAction}
+            contentClassName="note-view-content" // Pass the new class name
+          />
         )}
       </div>
     </DragDropContext>
   );
-
 };
 
 export default NotesPage;

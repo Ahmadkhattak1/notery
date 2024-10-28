@@ -4,9 +4,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
 /* Global Box-Sizing Reset */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
     box-sizing: border-box;
 }
 
@@ -15,9 +13,9 @@ body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    color: #4D4D4D; /* Primary text color */
-    background-color: #FFFFFF; /* White background for a clean look */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    color: #4D4D4D;
+    background-color: #FFFFFF;
+    overflow-x: hidden;
 }
 
 /* Utility Classes */
@@ -31,21 +29,19 @@ body {
 
 /* Header Styling */
 .app-header {
-    position: fixed; /* Keep header fixed at the top */
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     background-color: #f1fcff;
-    padding: 8px 16px; /* Reduced padding for smaller gaps */
+    padding: 8px 16px;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Space between left and right sections */
+    justify-content: space-between;
     z-index: 1500;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 8px; /* Reduced gap between rows on smaller screens */
-    height: auto; /* Allow height to adjust based on content */
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 /* Header Left Section */
@@ -53,27 +49,32 @@ body {
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 0; /* Prevent overflow */
+    min-width: 0;
 }
 
 /* Header Title */
 .app-header h1 {
     text-align: left;
-    color: #2193b0; /* Blue text for contrast */
-    font-size: 24px; /* Reduced font size */
+    color: #2193b0;
+    font-size: 24px;
     font-weight: 700;
     margin: 0;
     flex-shrink: 0;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 50px;
 }
 
 /* Header Center Section (Buttons) */
 .header-center {
-    display: none; /* Hidden by default */
+    display: none;
     align-items: center;
     justify-content: center;
     flex: 1;
-    min-width: 0; /* Prevent overflow */
-    gap: 10px; /* Reduced gap */
+    min-width: 0;
+    gap: 10px;
 }
 
 /* Show Header Buttons When a Note is Open */
@@ -86,17 +87,16 @@ body {
     background-color: #FFFFFF;
     color: #2193b0;
     border: 1px solid #2193b0;
-    padding: 6px 10px; /* Reduced padding */
+    padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px; /* Reduced font size */
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 12px;
+    transition: background-color 0.2s, color 0.2s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-decoration: none; /* Remove underline from labels */
-    white-space: nowrap; /* Prevent text from wrapping */
-    box-sizing: border-box;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .header-button:hover {
@@ -104,34 +104,65 @@ body {
     color: #FFFFFF;
 }
 
+/* AI Notes Button */
 .ai-notes-button {
-    background-color: #ffffff;
-    color: #4D4D4D;
-    border: 1px solid #4D4D4D;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: #FF5722;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    animation: pulse 3s infinite;
 }
 
 .ai-notes-button:hover {
-    background-color: #4D4D4D;
-    color: #ffffff;
+    background-color: #E64A19;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ai-notes-button:active {
+    background-color: #D84315;
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ai-notes-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s;
+}
+
+.ai-notes-text {
+    font-size: 14px;
+    color: #FFFFFF;
+    font-weight: 600;
 }
 
 /* Upload Image Container */
 .upload-image-container {
     display: flex;
     align-items: center;
-    gap: 8px; /* Reduced gap between buttons */
+    gap: 8px;
 }
 
-/* Ensure Labels Cover the Entire Button Area */
 .upload-image-container label.header-button {
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 6px 10px; /* Reduced padding */
-    box-sizing: border-box;
+    padding: 6px 10px;
 }
 
 /* Profile Section */
@@ -139,23 +170,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    position: relative; /* For dropdown positioning */
+    position: relative;
     flex: 1;
-    min-width: 0; /* Prevent overflow */
-    margin-left: auto; /* Push profile section to the far right */
+    min-width: 0;
+    margin-left: auto;
 }
 
 /* Profile Icon */
 .profile-icon {
-    width: 36px; /* Reduced size */
-    height: 36px; /* Reduced size */
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background-color: #2193b0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s;
 }
 
 .profile-icon:hover {
@@ -171,33 +202,33 @@ body {
 
 .profile-placeholder {
     color: #ffffff;
-    font-size: 16px; /* Reduced font size */
+    font-size: 16px;
     font-weight: 600;
 }
 
 /* Profile Dropdown Menu */
 .profile-dropdown {
     position: absolute;
-    top: 45px; /* Adjusted for reduced header height */
+    top: 45px;
     right: 0;
     background-color: #ffffff;
     border: 1px solid #ddd;
     border-radius: 8px;
     z-index: 2000;
-    min-width: 140px; /* Reduced width */
+    min-width: 140px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-dropdown ul {
     list-style: none;
     margin: 0;
-    padding: 8px 0; /* Reduced padding */
+    padding: 8px 0;
 }
 
 .profile-dropdown li {
-    padding: 8px 16px; /* Reduced padding */
+    padding: 8px 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s;
 }
 
 .profile-dropdown li:hover {
@@ -207,49 +238,68 @@ body {
 /* Sidebar Toggle Button (Hamburger Icon) */
 .sidebar-toggle-button {
     position: fixed;
-    top: 12px; /* Adjusted for reduced header height */
-    left: 12px; /* Adjusted for reduced header height */
+    top: 12px;
+    left: 12px;
     background-color: #ffffff;
     border: none;
     border-radius: 50%;
-    width: 36px; /* Reduced size */
-    height: 36px; /* Reduced size */
-    font-size: 20px; /* Reduced font size */
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
     cursor: pointer;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-    display: none; /* Hidden by default, shown on smaller screens */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1600; /* Above the header */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    z-index: 1600;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .sidebar-toggle-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Adjust Main Container to Account for Fixed Header */
+/* Adjust Main Container to Account for Fixed Header and Breadcrumbs */
 .notes-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Allow container to grow beyond viewport */
+    min-height: 100vh;
     position: relative;
     background-color: #FFFFFF;
-    padding-top: 60px; /* Reduced padding from 80px to 60px */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding-top: 60px;
+    overflow-x: hidden;
+}
+
+/* Breadcrumbs Wrapper */
+.breadcrumbs-wrapper {
+    position: fixed;
+    top: 60px;
+    left: 250px;
+    right: 0;
+    z-index: 999;
+    padding: 12px 0;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+}
+
+/* Tablet Adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .breadcrumbs-wrapper {
+        left: 200px;
+        width: calc(100% - 200px);
+    }
 }
 
 /* No Note Selected */
 .no-note-wrapper {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Center vertically */
-    align-items: center;     /* Center horizontally */
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    height: calc(100vh - 60px); /* Adjust height to account for header */
+    height: calc(100vh - 60px);
+    padding: 15px;
     box-sizing: border-box;
-    padding: 15px; /* Reduced padding */
 }
 
 .no-note-selected {
@@ -258,25 +308,32 @@ body {
 }
 
 .no-note-selected p {
-    font-size: 16px; /* Reduced font size */
-    margin-top: 10px; /* Reduced top margin */
+    font-size: 16px;
+    margin-top: 10px;
 }
 
-/* Note Content Area */
-.note-content {
+.no-note-selected h2 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    margin-top: -20px;
+    color: #2d3748;
+}
+
+/* Note View Content Area */
+.note-view-content {
     display: flex;
     flex-direction: column;
     height: 100%;
-    align-items: center; /* Center the editor horizontally */
-    background-color: #FFFFFF; /* White background */
-    padding: 15px; /* Reduced padding */
-    overflow-y: auto; /* Enable vertical scrolling if content exceeds viewport */
+    align-items: center;
+    background-color: #FFFFFF;
+    padding: 15px;
+    overflow-y: auto;
 }
 
 /* Editor Content Area */
 .editor-content {
     width: 100%;
-    max-width: 750px; /* Slightly reduced max-width for better presentation */
+    max-width: 750px;
     flex-grow: 1;
     outline: none;
     font-size: 16px;
@@ -284,22 +341,22 @@ body {
     color: #333333;
     white-space: pre-wrap;
     word-wrap: break-word;
-    position: relative; /* For placeholder positioning */
+    position: relative;
     overflow-y: auto;
 }
 
 /* Toolbar Styling */
 .toolbar {
     width: 100%;
-    max-width: 750px; /* Adjusted max-width */
+    max-width: 750px;
     display: flex;
     align-items: center;
-    gap: 8px; /* Reduced gap */
-    padding: 8px; /* Reduced padding */
+    gap: 8px;
+    padding: 8px;
     background-color: #f8f9fa;
     border-radius: 8px;
     flex-wrap: wrap;
-    margin-bottom: 8px; /* Reduced margin */
+    margin-bottom: 8px;
     box-sizing: border-box;
 }
 
@@ -308,11 +365,11 @@ body {
     background-color: #FFFFFF;
     color: #4D4D4D;
     border: 1px solid #ddd;
-    padding: 6px 10px; /* Reduced padding */
+    padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px; /* Reduced font size */
-    transition: background-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+    font-size: 12px;
+    transition: background-color 0.2s, transform 0.1s, color 0.2s;
     flex: 0 0 auto;
 }
 
@@ -324,11 +381,11 @@ body {
 .toolbar button.active {
     background-color: #2193b0;
     color: #FFFFFF;
-    border: 1px solid #2193b0;
+    border-color: #2193b0;
 }
 
 .toolbar .text-color-select {
-    padding: 6px 10px; /* Reduced padding */
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid #ddd;
     background-color: #ffffff;
@@ -342,18 +399,18 @@ body {
 
 .toolbar .image-upload-options {
     display: flex;
-    gap: 8px; /* Reduced gap */
+    gap: 8px;
 }
 
 .toolbar .image-upload-label {
     background-color: #FFFFFF;
     color: #2193b0;
     border: 1px solid #2193b0;
-    padding: 6px 10px; /* Reduced padding */
+    padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px; /* Reduced font size */
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 12px;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .toolbar .image-upload-label:hover {
@@ -364,21 +421,21 @@ body {
 /* Editor Buttons (Close Note) */
 .editor-buttons {
     width: 100%;
-    max-width: 750px; /* Adjusted max-width */
+    max-width: 750px;
     display: flex;
     justify-content: flex-end;
-    margin-top: 12px; /* Reduced margin */
+    margin-top: 12px;
 }
 
 .close-button {
-    padding: 8px 16px; /* Reduced padding */
+    padding: 8px 16px;
     border: none;
     border-radius: 30px;
     cursor: pointer;
     font-weight: 600;
     background-color: #f8f9fa;
     color: #333333;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    transition: background-color 0.3s, transform 0.3s;
 }
 
 .close-button:hover {
@@ -403,10 +460,10 @@ body {
 /* Actual Modal Content */
 .modal-content {
     background-color: #ffffff;
-    padding: 25px; /* Reduced padding */
+    padding: 25px;
     border-radius: 20px;
     width: 90%;
-    max-width: 380px; /* Reduced max-width */
+    max-width: 380px;
     position: relative;
     transform: scale(1);
     animation: modalFadeIn 0.3s ease-in-out;
@@ -426,23 +483,23 @@ body {
 .modal-content h2 {
     margin-top: 0;
     color: #2193b0;
-    font-size: 22px; /* Reduced font size */
+    font-size: 22px;
     font-weight: 700;
-    margin-bottom: 16px; /* Reduced margin */
+    margin-bottom: 16px;
 }
 
 .folder-modal-content {
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Reduced gap */
+    gap: 12px;
 }
 
 .folder-name-input {
-    padding: 8px 12px; /* Reduced padding */
+    padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    font-size: 14px; /* Reduced font size */
-    transition: border-color 0.3s ease;
+    font-size: 14px;
+    transition: border-color 0.3s;
     width: 100%;
     box-sizing: border-box;
 }
@@ -455,8 +512,8 @@ body {
 .modal-buttons {
     display: flex;
     justify-content: flex-end;
-    gap: 8px; /* Reduced gap */
-    margin-top: 16px; /* Reduced margin */
+    gap: 8px;
+    margin-top: 16px;
 }
 
 /* Editor Placeholder */
@@ -480,7 +537,7 @@ body {
     left: 15px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 20px; /* Reduced font size */
+    font-size: 20px;
     line-height: 1.2;
 }
 
@@ -488,70 +545,115 @@ body {
 
 /* Mobile Styles */
 @media (max-width: 768px) {
-    /* Show Hamburger Icon */
-    .sidebar-toggle-button {
-        display: flex; /* Show hamburger button */
+    /* Adjust Main Container Padding for Small Screens */
+    .notes-container {
+        padding-top: 80px;
     }
 
-    /* Adjust Header Layout for Mobile */
+    .no-note-wrapper {
+        height: calc(100vh - 80px);
+    }
+
+    /* Show Hamburger Button */
+    .sidebar-toggle-button {
+        display: flex;
+    }
+
+    /* Prevent Header Title Overlap */
     .app-header {
-        flex-direction: column; /* Stack elements vertically */
-        align-items: center;
-        gap: 6px; /* Reduced gap */
-        padding: 8px 12px; /* Reduced padding */
+        flex-wrap: nowrap;
     }
 
     .app-header h1 {
-        font-size: 20px; /* Further reduced font size */
-        text-align: center;
-        margin-left: 0; /* Center the title */
+        flex: 1;
+        margin-right: 50px;
     }
 
-    /* Header Center (Buttons) - Display Below Title on Mobile */
-    .header-center {
+    /* Adjust AI Notes Button on Mobile */
+    .ai-notes-button {
+        padding: 8px 12px;
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    .ai-notes-text {
+        display: none;
+    }
+
+    /* Adjust Image Insertion Button on Mobile */
+    .upload-image-container label.header-button {
+        padding: 6px 8px;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    .upload-image-container label.header-button span {
+        display: none;
+    }
+
+    /* Adjust Breadcrumbs for Mobile */
+    .breadcrumbs-wrapper {
+        left: 0;
+        top: 50px;
+        padding: 8px 0;
         width: 100%;
-        justify-content: center;
-        gap: 8px; /* Further reduced gap */
     }
 
-    /* Ensure Header Buttons are Centered and Fit Within Mobile Header */
-    .header-center .header-button,
-    .header-center .ai-notes-button {
-        padding: 6px 8px; /* Further reduced padding for mobile */
-        font-size: 12px; /* Further reduced font size for mobile */
+    .breadcrumbs {
+        padding: 0 16px;
+        margin: 10px auto;
     }
 
-    /* Adjust Upload Image Container */
-    .upload-image-container {
-        gap: 6px; /* Further reduced gap between buttons */
+    .breadcrumbs ul {
+        gap: 10px;
     }
 
-    /* Adjust Profile Section */
-    .profile-section {
-        position: static; /* Remove absolute positioning */
-        margin-left: 0; /* Reset margin */
+    .breadcrumbs li {
+        font-size: 14px;
     }
 
-    /* Adjust Notes Container Padding */
-    .notes-container {
-        padding-top: 70px; /* Adjusted for reduced header height + buttons */
+    .breadcrumbs li a {
+        font-weight: 400;
     }
 
-    /* Adjust Note Content Area Padding */
-    .note-content {
-        padding: 10px; /* Further reduced padding */
+    .breadcrumbs li::after {
+        font-size: 16px;
+        margin-left: 8px;
+    }
+
+    .breadcrumbs li span {
+        font-size: 14px;
+    }
+
+    /* Further reduce padding and margins */
+    .recent-notes-section {
+        margin-top: 8px;
+    }
+
+    .recent-notes-grid {
+        gap: 8px;
+    }
+
+    .welcome-section h2 {
+        font-size: 20px;
+        margin-top: 10px;
+        margin-bottom: 6px;
+    }
+
+    .note-card {
+        padding: 10px;
     }
 
     /* Adjust Toolbar */
     .toolbar {
-        padding: 6px; /* Further reduced padding */
-        gap: 6px; /* Further reduced gap */
+        padding: 6px;
+        gap: 6px;
     }
 
     .toolbar button,
     .toolbar select {
-        padding: 5px 8px; /* Further reduced padding */
-        font-size: 12px; /* Further reduced font size */
+        padding: 5px 8px;
+        font-size: 12px;
     }
 
     /* Adjust Editor Buttons */
@@ -563,89 +665,73 @@ body {
 
     .close-button {
         width: 100%;
-        padding: 8px 14px; /* Further reduced padding */
+        padding: 8px 14px;
+    }
+}
+
+/* Very Small Screens */
+@media (max-width: 480px) {
+    /* Further Adjust Main Container Padding */
+    .notes-container {
+        padding-top: 70px;
+    }
+
+    .no-note-wrapper {
+        height: calc(100vh - 70px);
+    }
+
+    /* Adjust Header Title */
+    .app-header h1 {
+        margin-right: 40px;
+        font-size: 20px;
+    }
+
+    /* Adjust AI Notes Button */
+    .ai-notes-button {
+        padding: 6px 10px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    /* Adjust Breadcrumbs */
+    .breadcrumbs-wrapper {
+        padding: 6px 0;
+    }
+
+    .breadcrumbs {
+        padding: 0 12px;
+        margin: 8px auto;
+    }
+
+    .breadcrumbs ul {
+        gap: 8px;
+    }
+
+    .breadcrumbs li,
+    .breadcrumbs li a,
+    .breadcrumbs li span {
+        font-size: 13px;
+    }
+
+    .breadcrumbs li::after {
+        font-size: 14px;
+        margin-left: 6px;
     }
 }
 
 /* Tablet Styles */
 @media (min-width: 769px) and (max-width: 1024px) {
+    .breadcrumbs-wrapper {
+        left: 200px;
+        width: calc(100% - 200px);
+    }
+
     .app-header h1 {
-        font-size: 22px; /* Slightly reduced font size */
+        margin-right: 50px;
     }
 
-    .header-center {
-        gap: 12px; /* Reduced gap */
-    }
-
-    .header-button,
-    .ai-notes-button {
-        padding: 6px 10px; /* Reduced padding */
-        font-size: 13px; /* Slightly reduced font size */
-    }
-
-    .toolbar {
-        padding: 8px; /* Reduced padding */
-        gap: 8px; /* Reduced gap */
-    }
-
-    .toolbar button,
-    .toolbar select {
-        padding: 6px 8px; /* Reduced padding */
-        font-size: 12px; /* Reduced font size */
-    }
-
-    .editor-content {
-        max-width: 700px; /* Adjusted max-width */
-    }
-
-    .toolbar,
-    .editor-buttons {
-        max-width: 700px; /* Adjusted max-width */
-    }
-}
-
-/* Additional Tightening on Very Small Devices */
-@media (max-width: 600px) {
-    .app-header h1 {
-        font-size: 18px; /* Further reduced font size */
-    }
-
-    .header-center .header-button,
-    .header-center .ai-notes-button {
-        font-size: 11px; /* Further reduced font size */
-        padding: 5px 6px; /* Further reduced padding */
-    }
-
-    .toolbar button,
-    .toolbar select {
-        font-size: 11px; /* Further reduced font size */
-        padding: 4px 6px; /* Further reduced padding */
-    }
-
-    .close-button {
-        padding: 6px 10px; /* Further reduced padding */
-    }
-}
-
-@media (max-width: 480px) {
-    .app-header h1 {
-        font-size: 16px; /* Further reduced font size */
-    }
-
-    .header-center .header-button,
-    .header-center .ai-notes-button {
-        font-size: 10px; /* Further reduced font size */
-        padding: 4px 6px; /* Further reduced padding */
-    }
-
-    .toolbar button,
-    .toolbar select {
-        font-size: 10px; /* Further reduced font size */
-        padding: 4px 6px; /* Further reduced padding */
-    }
-
-    .close-button {
-        padding: 5px 8px; /* Further reduced padding */
+    .upload-image-container label.header-button span {
+        display: inline;
     }
 }
 
@@ -658,27 +744,27 @@ body {
     background-color: #c53d3d;
     color: white;
     text-align: center;
-    padding: 8px; /* Reduced padding */
+    padding: 8px;
     z-index: 2000;
     font-weight: bold;
 }
 
 .offline-alert p {
     margin: 0;
-    font-size: 14px; /* Reduced font size */
+    font-size: 14px;
 }
 
 /* Save Indicator Styling */
 .save-indicator {
     position: fixed;
-    bottom: 16px; /* Reduced distance from bottom */
-    right: 16px; /* Reduced distance from right */
+    bottom: 16px;
+    right: 16px;
     background-color: #4caf50;
     color: white;
-    padding: 5px 10px; /* Reduced padding */
+    padding: 5px 10px;
     border-radius: 4px;
     z-index: 2000;
-    font-size: 10px; /* Reduced font size */
+    font-size: 10px;
     transition: background-color 0.3s, opacity 0.3s;
     opacity: 1;
 }
@@ -694,15 +780,15 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 15px; /* Reduced padding */
-    font-size: 14px; /* Reduced font size */
+    padding: 15px;
+    font-size: 14px;
     color: #555;
 }
 
 /* Load More Button */
 .load-more-button {
-    padding: 8px 16px; /* Reduced padding */
-    margin: 16px auto; /* Reduced margin */
+    padding: 8px 16px;
+    margin: 16px auto;
     display: block;
     background-color: #007bff;
     color: white;
@@ -724,8 +810,8 @@ body {
 
 /* Cancel Button */
 .cancel-button {
-    padding: 8px 16px; /* Reduced padding */
-    margin-left: 8px; /* Reduced margin */
+    padding: 8px 16px;
+    margin-left: 8px;
     background-color: #dc3545;
     color: white;
     border: none;
@@ -741,43 +827,61 @@ body {
 /* Error Message Styling */
 .error-message {
     text-align: center;
-    margin-top: 40px; /* Reduced margin */
-    color: #e53e3e; /* Red color for errors */
-    font-size: 14px; /* Reduced font size */
+    margin-top: 40px;
+    color: #e53e3e;
+    font-size: 14px;
+}
+
+/* Note View Specific Styles */
+.note-view-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    align-items: center;
+    background-color: #FFFFFF;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* Note Content Area */
+.note-view-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    align-items: center;
+    background-color: #FFFFFF;
+    padding: 15px;
+    overflow-y: auto;
 }
 
 /* Note Editor Specific Styles */
 .note-editor {
     width: 100%;
-    max-width: 750px; /* Adjusted max-width */
+    max-width: 750px;
     margin: 0 auto;
-    padding: 10px; /* Reduced padding */
+    padding: 10px;
 }
 
-
-
-/* Additional Styling for Recent Notes Presentation */
+/* Recent Notes Presentation */
 .recent-notes-section {
-    margin-top: 10px; /* Reduced top margin */
+    margin-top: 10px;
 }
 
 .recent-notes-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px; /* Reduced gap */
+    gap: 12px;
     justify-content: center;
 }
 
-/* Adjustments for Note Cards within Recent Notes */
+/* Note Cards */
 .note-card {
-    /* Assuming NoteView.css handles note-card styles, but if overridden here: */
-    /* Ensure no additional margins/paddings causing gaps */
-    margin: 0; /* Remove any extra margins */
-    padding: 12px; /* Adjust padding for better presentation */
+    margin: 0;
+    padding: 12px;
     border: 1px solid #d1d5db;
-    border-radius: 8px; /* Reduced border radius */
+    border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s, box-shadow 0.3s;
 }
 
 .note-card:hover {
@@ -785,94 +889,12 @@ body {
     transform: translateY(-4px);
 }
 
-/* Recent Notes Title Adjustment */
+/* Recent Notes Title */
 .welcome-section h2 {
-    font-size: 22px; /* Reduced font size */
-    margin-bottom: 8px; /* Reduced bottom margin */
+    font-size: 22px;
+    margin-bottom: 8px;
     margin-top: -20px;
     color: #2d3748;
-}
-
-/* Additional Flexbox Adjustments */
-.notes-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    position: relative;
-    background-color: #FFFFFF;
-    padding-top: 60px; /* Reduced top padding */
-    overflow-x: hidden;
-}
-
-
-/* Footer or other components (if any) */
-.footer {
-    /* Ensure footer aligns properly without extra gaps */
-    margin-top: 0;
-}
-
-
-/* Mobile Styles */
-@media (max-width: 768px) {
-    /* Further reduce padding and margins */
-    .recent-notes-section {
-        margin-top: 8px; /* Further reduced top margin */
-    }
-
-    .recent-notes-grid {
-        gap: 8px; /* Further reduced gap */
-    }
-
-    .welcome-section h2 {
-        font-size: 20px; /* Further reduced font size */
-        margin-top: 10px;
-        margin-bottom: 6px; /* Further reduced bottom margin */
-    }
-
-    .note-card {
-        padding: 10px; /* Further reduced padding */
-    }
-}
-
-/* Tablet Styles */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .recent-notes-section {
-        margin-top: 12px; /* Adjust as needed */
-    }
-
-    .recent-notes-grid {
-        gap: 10px; /* Adjust gap */
-    }
-
-    .welcome-section h2 {
-        font-size: 20px; /* Adjust font size */
-        margin-bottom: 8px; /* Adjust bottom margin */
-    }
-
-    .note-card {
-        padding: 12px; /* Adjust padding */
-    }
-}
-
-
-.ai-notes-button {
-    background-color: #FF5722; /* Vibrant Orange */
-    color: #FFFFFF;
-    border: none; /* Remove default border for a cleaner look */
-    padding: 10px 20px; /* Increased padding for better click area */
-    border-radius: 25px; /* Rounded corners for a pill-shaped button */
-    cursor: pointer;
-    font-size: 14px; /* Slightly larger font for readability */
-    font-weight: 600; /* Bold text to stand out */
-    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px; /* Space between icon and text */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    position: relative;
-    overflow: hidden;
-    animation: pulse 3s infinite; /* Continuous pulsing animation */
 }
 
 /* Pulse Animation */
@@ -891,42 +913,7 @@ body {
     }
 }
 
-/* Style for the AI Notes Button */
-.ai-notes-button {
-    background-color: #FF5722; /* Vibrant color */
-    padding: 10px 16px; /* Padding around the button */
-    border-radius: 25px; /* Rounded corners for a modern look */
-    border: none; /* No border */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
-}
-
-.ai-notes-button:hover {
-    background-color: #E64A19; /* Darker shade on hover */
-    transform: translateY(-2px); /* Slight upward movement on hover */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
-}
-
-.ai-notes-button:active {
-    background-color: #D84315; /* Even darker on click */
-    transform: translateY(0); /* Reset on click */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* AI Notes Icon Image */
-.ai-notes-icon {
-    width: 20px; /* Adjust size as needed */
-    height: 20px; /* Adjust size as needed */
-    transition: transform 0.3s ease;
-}
-
-/* AI Notes Text */
-.ai-notes-text {
-    font-size: 14px;
-    color: #FFFFFF;
-    font-weight: 600;
+/* Footer */
+.footer {
+    margin-top: 0;
 }

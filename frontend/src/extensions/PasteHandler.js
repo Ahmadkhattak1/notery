@@ -12,30 +12,64 @@ const PasteHandler = Extension.create({
         props: {
           handlePaste: (view, event) => {
             const clipboardData = event.clipboardData || event.originalEvent.clipboardData;
-            const items = clipboardData.items;
+            const htmlData = clipboardData.getData('text/html');
+            const plainText = clipboardData.getData('text/plain');
 
-            let handled = false;
+            // Function to create a code block node
+            const insertCodeBlock = (code) => {
+              const node = view.state.schema.nodes.code_block.create({
+                params: { language: 'javascript' }, // You can adjust the default language or make it dynamic
+              }, view.state.schema.text(code));
+              const transaction = view.state.tr.replaceSelectionWith(node);
+              view.dispatch(transaction);
+            };
 
-            for (const item of items) {
-              if (item.type.startsWith('image/')) {
-                const file = item.getAsFile();
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (readerEvent) => {
-                    const node = view.state.schema.nodes.image.create({
-                      src: readerEvent.target.result,
-                    });
-                    const transaction = view.state.tr.replaceSelectionWith(node);
-                    view.dispatch(transaction);
-                  };
-                  reader.readAsDataURL(file);
+            // Check if the pasted content contains a code block
+            if (htmlData) {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(htmlData, 'text/html');
+              const codeBlock = doc.querySelector('pre > code');
+
+              if (codeBlock) {
+                event.preventDefault();
+                const codeText = codeBlock.textContent;
+                insertCodeBlock(codeText);
+                return true;
+              }
+
+              // Handle images as before
+              const items = clipboardData.items;
+              let handled = false;
+
+              for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                  const file = item.getAsFile();
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (readerEvent) => {
+                      const node = view.state.schema.nodes.image.create({
+                        src: readerEvent.target.result,
+                      });
+                      const transaction = view.state.tr.replaceSelectionWith(node);
+                      view.dispatch(transaction);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                  handled = true;
                 }
-                handled = true;
+              }
+
+              if (handled) {
+                event.preventDefault();
+                return true;
               }
             }
 
-            if (handled) {
+            // Fallback: If plain text is detected as code (optional)
+            if (plainText && /^```[\s\S]*```$/.test(plainText.trim())) {
               event.preventDefault();
+              const codeContent = plainText.trim().replace(/^```[\s\S]*```$/, '').trim();
+              insertCodeBlock(codeContent);
               return true;
             }
 

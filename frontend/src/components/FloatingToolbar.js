@@ -220,51 +220,72 @@ const FloatingToolbar = ({ editor }) => {
       >
         {/* Formatting Buttons */}
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleBold().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleBold().run());
+          }}
           className={editor.isActive('bold') ? 'is-active' : ''}
           title="Bold"
         >
           <FontAwesomeIcon icon={faBold} />
         </button>
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleItalic().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleItalic().run());
+          }}
           className={editor.isActive('italic') ? 'is-active' : ''}
           title="Italic"
         >
           <FontAwesomeIcon icon={faItalic} />
         </button>
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleUnderline().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleUnderline().run());
+          }}
           className={editor.isActive('underline') ? 'is-active' : ''}
           title="Underline"
         >
           <FontAwesomeIcon icon={faUnderline} />
         </button>
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleStrike().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleStrike().run());
+          }}
           className={editor.isActive('strike') ? 'is-active' : ''}
           title="Strikethrough"
         >
           <FontAwesomeIcon icon={faStrikethrough} />
         </button>
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleCode().run())}
-          className={editor.isActive('code') ? 'is-active' : ''}
-          title="Inline Code"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleCodeBlock().run());
+          }}
+          className={editor.isActive('codeBlock') ? 'is-active' : ''}
+          title="Code Block"
         >
           <FontAwesomeIcon icon={faCode} />
         </button>
 
         {/* H1 and H2 */}
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleHeading({ level: 1 }).run());
+          }}
           className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
           title="Heading 1"
         >
           <span className="heading-label">H1</span>
         </button>
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleHeading({ level: 2 }).run());
+          }}
           className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
           title="Heading 2"
         >
@@ -273,7 +294,10 @@ const FloatingToolbar = ({ editor }) => {
 
         {/* Unordered List */}
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleBulletList().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleBulletList().run());
+          }}
           className={editor.isActive('bulletList') ? 'is-active' : ''}
           title="Bullet List"
         >
@@ -282,7 +306,10 @@ const FloatingToolbar = ({ editor }) => {
 
         {/* Ordered List */}
         <button
-          onClick={() => applyStyle(() => editor.chain().focus().toggleOrderedList().run())}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            applyStyle(() => editor.chain().focus().toggleOrderedList().run());
+          }}
           className={editor.isActive('orderedList') ? 'is-active' : ''}
           title="Numbered List"
         >
@@ -292,7 +319,10 @@ const FloatingToolbar = ({ editor }) => {
         {/* Paragraph Dropdown */}
         <div className="paragraph-dropdown-container">
           <button
-            onClick={(event) => handleDropdownClick('paragraph', event)}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              handleDropdownClick('paragraph', event);
+            }}
             className={
               editor.isActive('paragraph') ||
               editor.isActive('codeBlock') ||
@@ -310,7 +340,10 @@ const FloatingToolbar = ({ editor }) => {
         {/* Alignment Dropdown */}
         <div className="align-dropdown-container">
           <button
-            onClick={(event) => handleDropdownClick('align', event)}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              handleDropdownClick('align', event);
+            }}
             className={
               editor.isActive({ textAlign: 'left' }) ||
               editor.isActive({ textAlign: 'center' }) ||
@@ -328,7 +361,10 @@ const FloatingToolbar = ({ editor }) => {
         {/* Text Color Picker */}
         <div className="color-picker-container">
           <button
-            onClick={(event) => handleDropdownClick('color-picker', event)}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              handleDropdownClick('color-picker', event);
+            }}
             className={editor.isActive('textStyle', { color: true }) ? 'is-active' : ''}
             title="Text Color"
           >
@@ -339,7 +375,10 @@ const FloatingToolbar = ({ editor }) => {
         {/* Background Color Picker */}
         <div className="bg-color-picker-container">
           <button
-            onClick={(event) => handleDropdownClick('bg-color-picker', event)}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              handleDropdownClick('bg-color-picker', event);
+            }}
             className={editor.isActive('highlight', { color: true }) ? 'is-active' : ''}
             title="Background Color"
           >
@@ -352,7 +391,8 @@ const FloatingToolbar = ({ editor }) => {
       {activeDropdown === 'paragraph' && (
         <Dropdown type="paragraph" position={dropdownPosition}>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().setParagraph().run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -364,7 +404,8 @@ const FloatingToolbar = ({ editor }) => {
             <span>Normal</span>
           </button>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().toggleCodeBlock().run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -376,7 +417,8 @@ const FloatingToolbar = ({ editor }) => {
             <span>Code Block</span>
           </button>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().toggleBlockquote().run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -393,7 +435,8 @@ const FloatingToolbar = ({ editor }) => {
       {activeDropdown === 'align' && (
         <Dropdown type="align" position={dropdownPosition}>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().setTextAlign('left').run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -405,7 +448,8 @@ const FloatingToolbar = ({ editor }) => {
             <span>Left</span>
           </button>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().setTextAlign('center').run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -417,7 +461,8 @@ const FloatingToolbar = ({ editor }) => {
             <span>Center</span>
           </button>
           <button
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
               applyStyle(() => editor.chain().focus().setTextAlign('right').run());
               setActiveDropdown(null);
               setDropdownPosition(null);
@@ -438,7 +483,8 @@ const FloatingToolbar = ({ editor }) => {
               key={color}
               className="color-button"
               style={{ backgroundColor: color }}
-              onClick={() => {
+              onMouseDown={(event) => {
+                event.preventDefault();
                 applyStyle(() => editor.chain().focus().setColor(color).run());
                 setActiveDropdown(null);
                 setDropdownPosition(null);
@@ -460,7 +506,8 @@ const FloatingToolbar = ({ editor }) => {
               key={color}
               className="bg-color-button"
               style={{ backgroundColor: color }}
-              onClick={() => {
+              onMouseDown={(event) => {
+                event.preventDefault();
                 applyStyle(() => editor.chain().focus().setHighlight({ color }).run());
                 setActiveDropdown(null);
                 setDropdownPosition(null);

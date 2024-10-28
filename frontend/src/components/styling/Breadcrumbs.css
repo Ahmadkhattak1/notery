@@ -1,0 +1,193 @@
+/* src/components/styling/Breadcrumbs.css */
+
+/* Importing Google Fonts - Poppins and Material Icons */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+/* Breadcrumbs Wrapper - Full-Width Gradient Background */
+.breadcrumbs-wrapper {
+    width: 100%;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2); /* Gradient background */
+    padding: 12px 0; /* Reduced vertical padding for tighter layout */
+    position: relative;
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+/* Breadcrumbs Container */
+.breadcrumbs {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto; /* Center the breadcrumbs */
+    padding: 0 24px; /* Horizontal padding */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    font-family: 'Poppins', sans-serif; /* Consistent font */
+    overflow: hidden; /* Prevent overflow into sidebar */
+}
+
+/* Breadcrumbs List */
+.breadcrumbs ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto; /* Enable horizontal scroll if needed */
+    gap: 12px; /* Increased gap for better spacing */
+    padding: 0;
+    margin: 0;
+    align-items: center;
+}
+
+/* Hide scrollbar for cleaner look */
+.breadcrumbs ul::-webkit-scrollbar {
+    display: none;
+}
+
+.breadcrumbs ul {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Breadcrumb Items */
+.breadcrumbs li {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: #4a5568;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Breadcrumb Links */
+.breadcrumbs li a {
+    color: #2b6cb0;
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumbs li a:hover {
+    color: #2c5282;
+    transform: translateY(-2px); /* Slight upward movement on hover */
+}
+
+/* Custom Separator using Material Icons */
+.breadcrumbs li::after {
+    content: 'arrow_forward'; /* Material Icon name */
+    font-family: 'Material Icons';
+    font-size: 20px;
+    color: #a0aec0;
+    margin-left: 12px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.breadcrumbs li:last-child::after {
+    content: ''; /* Remove separator for the last item */
+}
+
+/* Current Page (Non-link) */
+.breadcrumbs li span {
+    color: #1a202c;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+/* Adding an active state indicator (optional) */
+.breadcrumbs li span::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background-color: #2b6cb0;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .breadcrumbs-wrapper {
+        padding: 10px 0; /* Adjust vertical padding if needed */
+    }
+
+    .breadcrumbs {
+        padding: 0 20px;
+    }
+
+    .breadcrumbs li {
+        font-size: 15px;
+    }
+
+    .breadcrumbs li::after {
+        font-size: 18px;
+        margin-left: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .breadcrumbs-wrapper {
+        background: linear-gradient(135deg, #e2e8f0, #a0aec0); /* Adjusted gradient */
+        padding: 8px 0; /* Adjusted vertical padding */
+    }
+
+    .breadcrumbs {
+        padding: 0 16px; /* Reduced horizontal padding */
+        margin: 10px auto; /* Adjusted top margin */
+    }
+
+    .breadcrumbs ul {
+        gap: 10px;
+    }
+
+    .breadcrumbs li {
+        font-size: 14px;
+    }
+
+    .breadcrumbs li a {
+        font-weight: 400;
+    }
+
+    .breadcrumbs li::after {
+        font-size: 16px;
+        margin-left: 8px;
+    }
+
+    .breadcrumbs li span {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumbs-wrapper {
+        background: linear-gradient(135deg, #cbd5e0, #a0aec0); /* Further adjusted gradient */
+        padding: 6px 0; /* Further reduced padding */
+    }
+
+    .breadcrumbs {
+        padding: 0 12px; /* Further reduced padding */
+        margin: 8px auto; /* Further reduced margin */
+    }
+
+    .breadcrumbs ul {
+        gap: 8px;
+    }
+
+    .breadcrumbs li {
+        font-size: 13px;
+    }
+
+    .breadcrumbs li a {
+        font-size: 13px;
+    }
+
+    .breadcrumbs li::after {
+        font-size: 14px;
+        margin-left: 6px;
+    }
+
+    .breadcrumbs li span {
+        font-size: 13px;
+    }
+}

@@ -7,6 +7,7 @@ import { getAuth, signOut } from 'firebase/auth';
 // Import the PNG image for AI Notes
 import AiNotesIcon from '../assets/ai-notes-icon.png';
 
+
 const Header = ({
   user,
   isProfileDropdownOpen,
@@ -44,7 +45,7 @@ const Header = ({
           {/* Upload Image and AI Notes Buttons */}
           <div className="upload-image-container">
             <label htmlFor="imageUploadHeader" className="header-button">
-              📷 Insert Photo
+              📷 <span>Insert Photo</span>
             </label>
             <input
               type="file"

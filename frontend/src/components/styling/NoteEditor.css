@@ -1,128 +1,204 @@
-/* NoteEditor.css */
+/* src/components/styling/NoteEditor.css */
 
-/* Note View Section */
-.note-view-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 24px; /* Base padding for larger screens */
-  box-sizing: border-box;
-  background-color: #f0f4f8; /* Subtle grey background for larger screens */
-  width: calc(100% - 250px); /* Adjust width to account for sidebar */
-  margin-left: 250px; /* Push content to the right of the sidebar */
-  overflow-x: hidden; /* Prevents unnecessary horizontal scroll */
+/* CSS Variables for Maintainability */
+:root {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-placeholder: #9ca3af;
+  --color-text: #1f2937;
+  --color-muted: #6b7280;
+  --color-bg: #ffffff;
+  --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-mono: 'Source Code Pro', monospace;
+  --max-width-desktop: 1000px;
+  --max-width-tablet: 900px;
+  --max-width-mobile: 100%;
+  --sidebar-width-tablet: 250px; /* Adjust based on your sidebar's width */
+  --padding-desktop: 20px;
+  --padding-tablet: 20px;
+  --padding-mobile: 10px;
+  --font-size-base: 1.125rem; /* 18px */
+  --font-size-mobile: 1rem; /* 16px */
+  --font-size-tablet: 1.0625rem; /* 17px */
 }
 
-/* Note Content Container */
-.note-content-container {
+/* Wrapper to fill the full viewport height and center content */
+.note-editor-wrapper {
   width: 100%;
-  max-width: 1200px; /* Adjust as needed for larger screens */
-  background-color: #f0f4f8; /* Match the section's background for larger screens */
-  padding: 24px; /* Padding for larger screens */
-  box-sizing: border-box;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: visible; /* Ensure no separate scrolling */
+  justify-content: center; /* Center horizontally */
+  align-items: flex-start; /* Align items to the top */
+  padding-top: 25px; /* Top padding for spacing */
+  box-sizing: border-box;
+  background-color: var(--color-bg); /* White background to blend with content */
+  margin-left: 0; /* Default margin */
+  transition: margin-left 0.3s ease; /* Smooth transition for margin changes */
+  margin-left: 200px;
+}
+
+/* Adjust wrapper to account for sidebar on tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .note-editor-wrapper {
+    margin-left: var(--sidebar-width-tablet); /* Prevent overlapping with sidebar */
+    padding-left: var(--padding-tablet);
+    padding-right: var(--padding-tablet);
+    padding-top: 70px;
+  }
+}
+
+/* Container to constrain the editor's width */
+.note-editor-container {
+  width: 100%;
+  max-width: var(--max-width-desktop); /* Maximum width of the container */
+  padding: 0 var(--padding-desktop); /* Horizontal padding */
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  justify-content: center; /* Center the content within the container */
+}
+
+/* Message when no note is selected */
+.no-note-selected {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 3.75rem 1.25rem; /* 60px 20px */
+  font-size: 1.25rem; /* 20px */
 }
 
 /* Note Content */
 .note-content {
+  padding-left: 250px;
   width: 100%;
-  max-width: 1000px; /* Adjust as needed */
-  background-color: #ffffff; /* White background for the editor */
-  border: 1px solid #e5e7eb; /* Light border */
-  border-radius: 8px; /* Retain rounded corners */
-  padding: 24px; /* Padding for larger screens */
-  box-sizing: border-box;
-  overflow: hidden; /* Remove scrolling inside the note content */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Light shadow */
-  margin: 0 auto; /* Center the note content */
-  flex-shrink: 0;  /* Prevent the container from shrinking */
-}
-
-/* Toolbar Section */
-.toolbar-section {
-  width: 100%;
-  max-width: 1000px;
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 16px;
-  margin: 0 auto; /* Center the toolbar */
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.toolbar-button {
-  background-color: #2193b0;
-  color: #ffffff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s ease;
-}
-
-.toolbar-button:hover {
-  background-color: #197a96;
+  justify-content: center; /* Center the editor content */
 }
 
 /* Editor Container */
 .editor-container {
-  padding: 16px;
-  box-sizing: border-box;
-  background-color: #ffffff;
-  width: 100%; /* Ensure the editor takes full width */
-  max-width: 1000px; /* Ensure the editor does not exceed this width */
-  overflow: visible; /* No scrolling inside the editor */
+  width: 100%;
+  max-width: 800px; /* Set a maximum width for the editor */
+  position: relative;
 }
 
 /* Editor Content */
 .editor-content {
-  min-height: 500px;
   width: 100%;
-  padding: 0 16px;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #1f2937;
-  word-wrap: break-word; /* Prevent long words from causing overflow */
+  max-width: 800px; /* Ensure the content doesn't exceed the container */
+  margin: 0 auto; /* Center the editor content */
+  min-height: 600px;
+  font-size: var(--font-size-base); /* 18px */
+  line-height: 1.8;
+  color: var(--color-text);
+  font-family: var(--font-base);
+  overflow-wrap: break-word; /* Replaced deprecated word-wrap */
+  padding: 20px; /* Added padding for better spacing */
+  box-sizing: border-box;
+  position: relative;
 }
 
-/* Code Block Styling */
+/* Placeholder Styling for Paragraphs */
+.editor-content p.is-empty {
+  position: relative;
+}
+
+.editor-content p.is-empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-placeholder);
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-style: italic;
+}
+
+/* Placeholder Styling for Headings */
+.editor-content h1.is-empty,
+.editor-content h2.is-empty {
+  position: relative; /* Ensure relative positioning for absolute pseudo-element */
+}
+
+.editor-content h1.is-empty::before,
+.editor-content h2.is-empty::before {
+  content: 'Start typing here...';
+  color: var(--color-placeholder);
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-style: italic;
+}
+
+/* Headings */
+.editor-content h1,
+.editor-content h2 {
+  font-weight: bold;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  /* Added position relative to support placeholder positioning */
+  position: relative;
+}
+
+.editor-content h1 {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+.editor-content h2 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+/* Paragraphs */
+.editor-content p {
+  margin: 1rem 0;
+  position: relative; /* For placeholder positioning */
+}
+
+/* Blockquotes */
+.editor-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+/* Lists */
+.editor-content ul,
+.editor-content ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+/* Code Blocks */
 .editor-content pre {
-  background-color: #f3f4f6;
+  background-color: #f9fafb;
   padding: 16px;
   border-radius: 6px;
-  overflow-x: auto; /* Allow horizontal scroll within code blocks if necessary */
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap; /* Wrap code lines to prevent overflow */
+  overflow-x: auto;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 1rem 0;
 }
 
+/* Inline Code */
 .editor-content code {
-  font-family: 'Source Code Pro', monospace;
+  font-family: var(--font-mono);
   background-color: #f3f4f6;
   padding: 2px 4px;
   border-radius: 4px;
 }
 
-/* Image Styling */
+/* Images */
 .editor-content img {
   max-width: 100%;
   height: auto;
   border-radius: 6px;
-  margin: 16px 0;
+  margin: 24px 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -130,7 +206,7 @@
 .editor-content figure {
   display: flex;
   justify-content: center;
-  margin: 16px 0;
+  margin: 24px 0;
 }
 
 .editor-content figure img {
@@ -139,130 +215,112 @@
   border-radius: 6px;
 }
 
-/* No Note Selected */
-.no-note-selected {
-  text-align: center;
-  color: #6b7280;
-  padding: 20px;
-  font-size: 18px;
+/* Links */
+.editor-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.editor-content a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Horizontal Rules */
+.editor-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2rem 0;
 }
 
 /* Responsive Design */
 
 /* Mobile Styles */
 @media (max-width: 768px) {
-  .note-view-section {
-    padding: 16px 0; /* Vertical padding only for spacing from header */
-    margin-left: 0; /* Remove left margin on mobile */
-    width: 100%; /* Full width on mobile */
-    background-color: #ffffff; /* White background */
+  .note-editor-wrapper {
+    padding-top: 60px;
+    padding-left: var(--padding-mobile);
+    padding-right: var(--padding-mobile);
+    margin-left: 0; /* Ensure no margin on mobile */
   }
 
-  .note-content-container {
-    padding: 16px 8px; /* Vertical and reduced horizontal padding */
-    background-color: #ffffff; /* White background on mobile */
-  }
-
-  .note-content {
-    padding: 16px 8px; /* Reduced horizontal padding */
-    margin: 0; /* Remove auto margins */
-    width: 100%; /* Full width */
-    max-width: none; /* Remove max-width */
-    border: 1px solid #ffffff; /* Change border color to white to hide it */
-    box-shadow: none; /* Remove box shadow to eliminate grey surrounding */
-    border-radius: 8px; /* Retain rounded corners */
-  }
-
-  .toolbar-section {
-    padding: 0 16px; /* Horizontal padding */
-  }
-
-  .toolbar {
-    gap: 4px; /* Reduce gap between toolbar buttons */
-  }
-
-  .toolbar-button {
-    padding: 6px 8px; /* Smaller padding */
-    font-size: 12px; /* Smaller font size */
+  .note-editor-container {
+    max-width: var(--max-width-mobile);
+    padding: 0 var(--padding-mobile); /* Reduced padding for mobile */
   }
 
   .editor-content {
-    font-size: 14px; /* Slightly smaller font size */
-    padding: 0 12px; /* Reduce horizontal padding */
+    font-size: var(--font-size-mobile); /* 16px */
+    line-height: 1.6;
+    padding: 15px; /* Adjusted padding for mobile */
   }
 
-  /* Further reduce side bezels by minimizing horizontal padding */
-  .note-content-container {
-    padding: 16px 8px; /* Reduced horizontal padding */
+  /* Adjust placeholder on mobile */
+  .editor-content p.is-empty::before,
+  .editor-content h1.is-empty::before,
+  .editor-content h2.is-empty::before {
+    left: 12px;
+    font-size: var(--font-size-mobile); /* 16px */
   }
 
-  .note-content {
-    padding: 16px 8px; /* Reduced horizontal padding */
+  /* No Note Selected Message */
+  .no-note-selected {
+    font-size: 1.125rem; /* 18px */
+    padding: 1.875rem 0.9375rem; /* 30px 15px */
   }
 }
 
 /* Tablet Styles */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .note-view-section {
-    padding: 20px;
-    margin-left: 250px; /* Keep left margin on tablets */
-    width: calc(100% - 250px); /* Adjust width to account for sidebar */
-    background-color: #f0f4f8; /* Maintain grey background */
+  .note-editor-wrapper {
+    padding-top: 70px;
+    padding-left: var(--padding-tablet);
+    padding-right: var(--padding-tablet);
+    margin-left: var(--sidebar-width-tablet); /* Prevent overlapping with sidebar */
   }
 
-  .note-content-container {
-    padding: 20px;
-    background-color: #f0f4f8; /* Maintain grey background */
-  }
-
-  .note-content {
-    padding: 20px; /* Maintain padding */
-  }
-
-  .toolbar-section {
-    padding: 0 20px; /* Slightly increased horizontal padding */
-  }
-
-  .toolbar-button {
-    padding: 7px 10px; /* Slightly larger padding */
-    font-size: 13px; /* Slightly larger font size */
+  .note-editor-container {
+    max-width: var(--max-width-tablet);
+    padding: 0 var(--padding-tablet); /* Adjusted padding for tablets */
   }
 
   .editor-content {
-    font-size: 15px; /* Slightly larger font size */
-    padding: 0 14px; /* Slightly larger horizontal padding */
+    font-size: var(--font-size-tablet); /* 17px */
+    line-height: 1.7;
+    padding: 18px; /* Adjusted padding for tablets */
+  }
+
+  /* Adjust placeholder on tablets */
+  .editor-content p.is-empty::before,
+  .editor-content h1.is-empty::before,
+  .editor-content h2.is-empty::before {
+    left: 14px;
+    font-size: var(--font-size-tablet); /* 17px */
   }
 }
 
-/* Desktop Styles */
+/* Desktop Styles (Optional for Larger Screens) */
 @media (min-width: 1025px) {
-  .note-view-section {
-    padding: 24px;
-    margin-left: 250px; /* Maintain sidebar space */
-    width: calc(100% - 250px); /* Adjust width to account for sidebar */
-    background-color: #f0f4f8; /* Maintain grey background */
+  .note-editor-wrapper {
+    padding-left: var(--padding-desktop);
+    padding-right: var(--padding-desktop);
+    margin-left: 0; /* Assuming no sidebar on larger screens */
   }
 
-  .note-content-container {
-    padding: 24px;
-    background-color: #f0f4f8; /* Maintain grey background */
-  }
-
-  .note-content {
-    padding: 24px; /* Maintain padding */
-  }
-
-  .toolbar-section {
-    padding: 0 24px; /* Increased horizontal padding */
-  }
-
-  .toolbar-button {
-    padding: 8px 12px; /* Standard padding */
-    font-size: 14px; /* Standard font size */
+  .note-editor-container {
+    max-width: var(--max-width-desktop);
+    padding: 0 var(--padding-desktop);
   }
 
   .editor-content {
-    font-size: 16px; /* Standard font size */
-    padding: 0 16px; /* Standard horizontal padding */
+    font-size: var(--font-size-base); /* 18px */
+    padding: 20px;
+  }
+
+  /* Adjust placeholder on desktop */
+  .editor-content p.is-empty::before,
+  .editor-content h1.is-empty::before,
+  .editor-content h2.is-empty::before {
+    left: 0;
+    font-size: var(--font-size-base); /* 18px */
   }
 }
