@@ -10,14 +10,14 @@
   --color-bg: #ffffff;
   --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --font-mono: 'Source Code Pro', monospace;
-  --max-width-desktop: 1000px;
+  --max-width-desktop: 1200px;
   --max-width-tablet: 900px;
   --max-width-mobile: 100%;
   --sidebar-width-tablet: 250px; /* Adjust based on your sidebar's width */
-  --padding-desktop: 20px;
+  --padding-desktop: 0px;
   --padding-tablet: 20px;
-  --padding-mobile: 10px;
-  --font-size-base: 1.125rem; /* 18px */
+  --padding-mobile: 0px;
+  --font-size-base: 1.01rem; /* 18px */
   --font-size-mobile: 1rem; /* 16px */
   --font-size-tablet: 1.0625rem; /* 17px */
 }
@@ -29,12 +29,13 @@
   display: flex;
   justify-content: center; /* Center horizontally */
   align-items: flex-start; /* Align items to the top */
-  padding-top: 25px; /* Top padding for spacing */
+  padding-top: 0px; /* Top padding for spacing */
   box-sizing: border-box;
   background-color: var(--color-bg); /* White background to blend with content */
   margin-left: 0; /* Default margin */
   transition: margin-left 0.3s ease; /* Smooth transition for margin changes */
-  margin-left: 200px;
+  margin-left: 140px;
+
 }
 
 /* Adjust wrapper to account for sidebar on tablets */
@@ -68,7 +69,6 @@
 
 /* Note Content */
 .note-content {
-  padding-left: 250px;
   width: 100%;
   display: flex;
   justify-content: center; /* Center the editor content */
@@ -236,6 +236,12 @@
 
 /* Mobile Styles */
 @media (max-width: 768px) {
+  .note-content {
+    padding-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Center the editor content */
+  }
   .note-editor-wrapper {
     padding-top: 60px;
     padding-left: var(--padding-mobile);
@@ -271,6 +277,13 @@
 
 /* Tablet Styles */
 @media (min-width: 769px) and (max-width: 1024px) {
+  .note-content {
+    padding-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Center the editor content */
+  }
+
   .note-editor-wrapper {
     padding-top: 70px;
     padding-left: var(--padding-tablet);
@@ -298,29 +311,3 @@
   }
 }
 
-/* Desktop Styles (Optional for Larger Screens) */
-@media (min-width: 1025px) {
-  .note-editor-wrapper {
-    padding-left: var(--padding-desktop);
-    padding-right: var(--padding-desktop);
-    margin-left: 0; /* Assuming no sidebar on larger screens */
-  }
-
-  .note-editor-container {
-    max-width: var(--max-width-desktop);
-    padding: 0 var(--padding-desktop);
-  }
-
-  .editor-content {
-    font-size: var(--font-size-base); /* 18px */
-    padding: 20px;
-  }
-
-  /* Adjust placeholder on desktop */
-  .editor-content p.is-empty::before,
-  .editor-content h1.is-empty::before,
-  .editor-content h2.is-empty::before {
-    left: 0;
-    font-size: var(--font-size-base); /* 18px */
-  }
-}

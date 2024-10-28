@@ -14,10 +14,10 @@ const CustomHeading = Heading.extend({
     let defaultFontSize = '';
 
     if (level === 1) {
-      defaultColor = '#6495ED'; // Blue for H1
+      defaultColor = '#1c1c1c'; // Blue for H1
       defaultFontSize = '1.5em'; // Adjust as needed
     } else if (level === 2) {
-      defaultColor = '#FFC000'; // Orange for H2
+      defaultColor = '#3d3d3d'; // Orange for H2
       defaultFontSize = '1.2em'; // Adjust as needed
     }
 
